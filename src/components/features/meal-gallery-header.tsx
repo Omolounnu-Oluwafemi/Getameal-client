@@ -1,0 +1,38 @@
+import Link from 'next/link';
+
+import { CloseIcon, ShareIcon } from '@/components/icons';
+import { ImageGallery } from './image-gallery';
+import type { ImageSrc } from '@/types';
+
+interface MealGalleryHeaderProps {
+  images: ImageSrc[];
+  alt: string;
+  kitchenId: string;
+}
+
+export function MealGalleryHeader({ images, alt, kitchenId }: MealGalleryHeaderProps) {
+  return (
+    <div className="relative">
+      <ImageGallery
+        images={images}
+        alt={alt}
+        className="relative h-83.25 w-full overflow-hidden rounded-t-[20px] bg-neutral-200 sm:h-80"
+      />
+
+      <Link
+        href={`/${kitchenId}`}
+        className="absolute top-4 left-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white p-2.5 shadow-[0px_4px_20px_0px_#00000040]"
+        aria-label="Back to kitchen"
+      >
+        <CloseIcon />
+      </Link>
+
+      <button
+        className="absolute top-4 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white p-2.5 shadow-[0px_4px_20px_0px_#00000040]"
+        aria-label="Share"
+      >
+        <ShareIcon />
+      </button>
+    </div>
+  );
+}

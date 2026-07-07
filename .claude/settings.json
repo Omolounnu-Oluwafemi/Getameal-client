@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/thepriestlytechbro/Downloads/**)",
+      "Bash(grep -iE \"\\\\.\\(jpg|jpeg|png|webp|gif\\)$\")",
+      "Bash(npx tsc *)",
+      "Bash(xargs cat -n)",
+      "Bash(mkdir -p \"/Users/thepriestlytechbro/Documents/MyWorks/GetaMeal-Client/src/app/[kitchenId]/@modal/\\(..\\)meals/[id]\")",
+      "Bash(ls \"/Users/thepriestlytechbro/Documents/MyWorks/GetaMeal-Client/src/app/[kitchenId]/@modal/\\(..\\)meals/[id]/../../../../../../public/images/kitchen/\" 2>&1)",
+      "Read(//Users/thepriestlytechbro/Documents/MyWorks/GetaMeal-Client/public/images/kitchen//**)"
+    ],
+    "additionalDirectories": [
+      "/Users/thepriestlytechbro/Documents/MyWorks/GetaMeal-Client/src/app/[kitchenId]/@modal/(..)meals"
+    ]
+  }
+}
