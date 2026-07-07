@@ -53,7 +53,7 @@ export function BasketClient({
       {checkoutOpen && <CheckoutSheet onClose={() => setCheckoutOpen(false)} />}
       <div className="min-h-screen bg-white pb-32">
         {/* Header */}
-        <div className="sticky top-0 z-30 flex items-center justify-between bg-[#FFFFFFE5] px-5 pt-8 pb-5 backdrop-blur-[20px]">
+        <div className="sticky top-0 z-30 flex items-center justify-between bg-[#FFFFFFE5] px-5 pt-[max(2rem,calc(env(safe-area-inset-top)+0.5rem))] pb-5 backdrop-blur-[20px]">
           <h1 className="text-2xl font-bold text-black">Your Basket</h1>
           <Link
             href="/meals/m1"

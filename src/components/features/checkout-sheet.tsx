@@ -224,7 +224,7 @@ export function CheckoutSheet({ onClose, deliveryFee = 2300 }: CheckoutSheetProp
         </div>
 
         {/* CTA */}
-        <div className="shrink-0 border-t border-[#EDEDED] px-5 pt-4 pb-10">
+        <div className="shrink-0 border-t border-[#EDEDED] px-5 pt-4 pb-[max(2.5rem,calc(env(safe-area-inset-bottom)+1rem))]">
           <Button
             variant="brand"
             onClick={handleContinue}
