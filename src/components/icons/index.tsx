@@ -183,6 +183,27 @@ export function PlusIcon({ className }: { className?: string }) {
   );
 }
 
+export function MinusIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+    >
+      <path
+        d="M4.375 10H15.625"
+        stroke="black"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function ShareMenuIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -336,7 +357,7 @@ export function StarIcon({ className }: { className?: string }) {
   );
 }
 
-export function CompletedOrderIcon({ className }: { className?: string }) {
+export function CompletedOrderIcon({}: { className?: string }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -363,7 +384,7 @@ export function CompletedOrderIcon({ className }: { className?: string }) {
   );
 }
 
-export const BasketIcon: React.FC<React.SVGProps<SVGElement>> = (props) => (
+export const BasketIcon: React.FC<React.SVGProps<SVGElement>> = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" fill="none" viewBox="0 0 27 27">
     <path
       stroke="#000"
@@ -375,7 +396,7 @@ export const BasketIcon: React.FC<React.SVGProps<SVGElement>> = (props) => (
   </svg>
 );
 
-export function RedIcon({ className }: { className?: string }) {
+export function RedIcon({}: { className?: string }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="19" fill="none" viewBox="0 0 18 19">
       <circle cx="7.2" cy="14.866" r="0.027" fill="#D9D9D9"></circle>
@@ -394,6 +415,37 @@ export function RedIcon({ className }: { className?: string }) {
           <path fill="#fff" d="M15.15.321H7.43v7.72h7.72z"></path>
         </clipPath>
       </defs>
+    </svg>
+  );
+}
+
+export function OrderBasketIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="60"
+      height="49"
+      fill="none"
+      viewBox="0 0 60 49"
+      className={className}
+    >
+      {/* Handle */}
+      <path
+        d="M20 24C20 14.611 24.477 7 30 7C35.523 7 40 14.611 40 24"
+        stroke="#1A1A1A"
+        strokeWidth="3.5"
+        strokeLinecap="round"
+      />
+      {/* Rim */}
+      <rect x="5" y="22" width="50" height="6" rx="3" fill="#E8A020" />
+      {/* Body */}
+      <path d="M9 28H51L47.5 46H12.5L9 28Z" fill="#F5B830" />
+      {/* Vertical weave lines */}
+      <line x1="21" y1="28" x2="19.5" y2="46" stroke="#E8A020" strokeWidth="1.5" />
+      <line x1="30" y1="28" x2="30" y2="46" stroke="#E8A020" strokeWidth="1.5" />
+      <line x1="39" y1="28" x2="40.5" y2="46" stroke="#E8A020" strokeWidth="1.5" />
+      {/* Horizontal weave line */}
+      <line x1="10" y1="37" x2="50" y2="37" stroke="#E8A020" strokeWidth="1.5" />
     </svg>
   );
 }

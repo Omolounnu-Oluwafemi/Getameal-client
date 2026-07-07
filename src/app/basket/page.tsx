@@ -8,13 +8,57 @@ import { BasketClient } from '@/components/features/basket-client';
 
 const MOCK_ITEMS = [
   { id: '1', name: 'Vegetable Soup', sold: 23, price: 5000, unit: 'Litre', qty: 2, image: soupImg },
-  { id: '2', name: 'A plate of Hot Jollof Rice', sold: 23, price: 5000, unit: 'Pack', qty: 1, image: spicyJollofImg },
-  { id: '3', name: 'Egusi Soup with Swallow', sold: 23, price: 5000, unit: 'Portion', qty: 2, image: stewImg },
+  {
+    id: '2',
+    name: 'A plate of Hot Jollof Rice',
+    sold: 23,
+    price: 5000,
+    unit: 'Pack',
+    qty: 1,
+    image: spicyJollofImg,
+  },
+  {
+    id: '3',
+    name: 'Egusi Soup with Swallow',
+    sold: 23,
+    price: 5000,
+    unit: 'Portion',
+    qty: 2,
+    image: stewImg,
+  },
 ];
 
 const MORE_MEALS = [
-  { id: 'm1', name: 'Fried Rice Special', image: friedRiceImg, price: 5000, badge: 'Popular' },
-  { id: 'm2', name: 'Meat Platter', image: meatPlaterImg, price: 6500, badge: 'Popular' },
+  {
+    id: 'm1',
+    name: 'Fried Rice Special',
+    imageUrl: friedRiceImg,
+    price: 5000,
+    unit: 'Pack',
+    soldCount: 23,
+    popular: true,
+    category: 'Rice',
+  },
+  {
+    id: 'm2',
+    name: 'Fish Platter',
+    imageUrl: meatPlaterImg,
+    price: 6500,
+    unit: 'Plate',
+    soldCount: 23,
+    popular: true,
+    category: 'Protein',
+  },
+  {
+    id: 'm3',
+    name: 'Meat Platter',
+    imageUrl: meatPlaterImg,
+    price: 6500,
+    unit: 'Plate',
+    soldCount: 23,
+    popular: true,
+    category: 'Protein',
+  },
 ];
 
 export default function BasketPage() {
