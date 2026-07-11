@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -189,6 +190,8 @@ interface CustomOrderFormProps {
 }
 
 export function CustomOrderForm({ kitchenName }: CustomOrderFormProps) {
+  const router = useRouter();
+  const { kitchenId } = useParams<{ kitchenId: string }>();
   const [order, setOrder] = useState('');
   const [notes, setNotes] = useState('');
   const [phone, setPhone] = useState('');
@@ -281,10 +284,16 @@ export function CustomOrderForm({ kitchenName }: CustomOrderFormProps) {
         <DatePicker value={date} onChange={setDate} onClose={() => setDatePickerOpen(false)} />
       )}
 
-      <div className="mt-20">
-        <Button variant="brand" className="h-14 w-full rounded-full text-base font-semibold">
-          Send request
-        </Button>
+      <div className="fixed inset-x-0 bottom-0 z-30 bg-white px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div className="mx-auto max-w-lg">
+          <Button
+            variant="brand"
+            onClick={() => router.push(`/${kitchenId}/custom-order/checkout`)}
+            className="h-14 w-full rounded-full text-base font-semibold"
+          >
+            Send request
+          </Button>
+        </div>
       </div>
     </>
   );

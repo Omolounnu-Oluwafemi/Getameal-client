@@ -22,7 +22,7 @@ export default async function CustomOrderPage({
   const kitchenName = getKitchenName(kitchenId);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white pb-32">
       <div className="relative mx-auto max-w-lg px-4 pt-10">
         {/* Close button — floated to top-right, above the heading */}
         <Link
