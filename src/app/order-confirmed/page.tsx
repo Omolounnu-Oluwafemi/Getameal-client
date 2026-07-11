@@ -14,6 +14,8 @@ export default async function OrderConfirmedPage({
     <OrderConfirmedClient
       orderNumber="#GM2048"
       sellerName="Amaka's Kitchen"
+      sellerWhatsApp="2348000000000"
+      chatMessage="Hi Amaka's Kitchen, I just placed order #GM2048 on GetaMeal."
       deliveryMethod={deliveryMethod}
       pickupAddress="Shop 209, Ikota shopping center, VGC"
       pickupImage={avatarImg}

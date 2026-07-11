@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +21,25 @@ export function CheckoutSheet({ onClose, deliveryFee = 2300 }: CheckoutSheetProp
   const [address, setAddress] = useState('');
   const [note, setNote] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const sheetRef = useRef<HTMLDivElement>(null);
+
+  // The sheet is 90vh tall, but the on-screen keyboard shrinks the *visible*
+  // viewport without shrinking the layout. Clamp the sheet to the visible
+  // height so the pinned CTA sits above the keyboard and the body scrolls
+  // instead of being covered.
+  useEffect(() => {
+    const vv = window.visualViewport;
+    const sheet = sheetRef.current;
+    if (!vv || !sheet) return;
+
+    const update = () => {
+      sheet.style.maxHeight = `${vv.height}px`;
+    };
+
+    update();
+    vv.addEventListener('resize', update);
+    return () => vv.removeEventListener('resize', update);
+  }, []);
 
   function handleContinue() {
     if (!delivery) return;
@@ -48,11 +67,20 @@ export function CheckoutSheet({ onClose, deliveryFee = 2300 }: CheckoutSheetProp
         role="dialog"
         aria-modal="true"
         aria-label="Confirm your order"
+        ref={sheetRef}
         className="fixed inset-x-0 bottom-0 z-50 flex h-[90vh] flex-col rounded-t-3xl bg-white shadow-[0px_6px_20px_0px_#0000000D]"
+        onFocusCapture={(e) => {
+          const field = e.target;
+          if (field.matches('input, textarea')) {
+            // Wait for the keyboard animation, then nudge the field into the
+            // now-smaller visible area if it isn't fully in view.
+            setTimeout(() => field.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 300);
+          }
+        }}
       >
         {/* Drag handle */}
         <div className="flex shrink-0 justify-center pt-3 pb-1">
-          <div className="h-1.5 w-16 rounded-full bg-[#C3C3C3]" />
+          <div className="h-1.5 w-16 rounded-full bg-[#989898]" />
         </div>
 
         {/* Scrollable body */}
