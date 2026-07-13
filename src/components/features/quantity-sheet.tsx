@@ -8,6 +8,10 @@ interface QuantitySheetProps {
   onClose: () => void;
   onConfirm: (qty: number) => void;
   onQtyChange?: (qty: number) => void;
+  /** Starting quantity — pass the current qty when editing an added extra. */
+  initialQty?: number;
+  /** Lowest selectable quantity; 0 lets the user remove an added extra. */
+  minQty?: number;
 }
 
 export function QuantitySheet({
@@ -16,8 +20,10 @@ export function QuantitySheet({
   onClose,
   onConfirm,
   onQtyChange,
+  initialQty = 1,
+  minQty = 1,
 }: QuantitySheetProps) {
-  const [qty, setQty] = useState(1);
+  const [qty, setQty] = useState(initialQty);
 
   function changeQty(next: number) {
     setQty(next);
@@ -75,8 +81,8 @@ export function QuantitySheet({
         <div className="flex flex-1 flex-col items-center justify-center gap-3">
           <div className="flex items-center gap-10">
             <button
-              onClick={() => changeQty(Math.max(1, qty - 1))}
-              disabled={qty <= 1}
+              onClick={() => changeQty(Math.max(minQty, qty - 1))}
+              disabled={qty <= minQty}
               className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100 text-2xl font-light text-neutral-600 transition-colors hover:bg-neutral-200 disabled:opacity-30"
               aria-label="Decrease quantity"
             >
@@ -100,9 +106,11 @@ export function QuantitySheet({
         {/* CTA */}
         <button
           onClick={handleConfirm}
-          className="bg-brand hover:bg-brand-dark w-full rounded-full py-4 text-base font-semibold text-white transition-all active:scale-[0.98]"
+          className={`w-full rounded-full py-4 text-base font-semibold text-white transition-all active:scale-[0.98] ${
+            qty === 0 ? 'bg-[#FA2A26] hover:bg-[#d92320]' : 'bg-brand hover:bg-brand-dark'
+          }`}
         >
-          Add {qty} {unit} — {formatted(price * qty)}
+          {qty === 0 ? 'Remove extra' : `Add ${qty} ${unit} — ${formatted(price * qty)}`}
         </button>
       </div>
     </>

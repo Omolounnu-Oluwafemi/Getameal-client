@@ -9,9 +9,10 @@ import { BasketIcon } from '@/components/icons';
 interface MealStickyBarProps {
   price: number;
   unit: string;
+  qty?: number;
 }
 
-export function MealStickyBar({ price, unit }: MealStickyBarProps) {
+export function MealStickyBar({ price, unit, qty = 1 }: MealStickyBarProps) {
   const [basketCount, setBasketCount] = useState(0);
 
   return (
@@ -20,7 +21,7 @@ export function MealStickyBar({ price, unit }: MealStickyBarProps) {
       {basketCount > 0 && (
         <Link
           href="/basket"
-          className="animate-slide-in-right fixed right-5 bottom-24 z-30 flex h-17 w-17 items-center justify-center rounded-[20px] bg-[#FFFFFFCF] px-4 shadow-[0px_4px_30px_0px_#0000001A]"
+          className="animate-slide-in-right fixed right-5 bottom-28 z-30 flex h-17 w-17 items-center justify-center rounded-[20px] bg-[#FFFFFFCF] px-4 shadow-[0px_4px_30px_0px_#0000001A]"
           aria-label={`Basket — ${basketCount} items`}
         >
           <div className="relative">
@@ -35,7 +36,7 @@ export function MealStickyBar({ price, unit }: MealStickyBarProps) {
       {/* Sticky bar */}
       <StickyBar
         amount={price}
-        caption={`Per ${unit}`}
+        caption={qty > 1 ? `For ${qty} ${unit}s` : `Per ${unit}`}
         actionLabel="Add to Basket"
         onAction={() => setBasketCount((n) => n + 1)}
       />

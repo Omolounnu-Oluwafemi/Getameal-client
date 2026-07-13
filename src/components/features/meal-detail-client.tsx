@@ -11,39 +11,61 @@ interface MealDetailClientProps {
   basePrice: number;
   unit: string;
   extras: Extra[];
+  /** Quantity carried over from the kitchen page's card controls. */
+  initialQty?: number;
 }
 
-export function MealDetailClient({ basePrice, unit, extras }: MealDetailClientProps) {
+export function MealDetailClient({
+  basePrice,
+  unit,
+  extras,
+  initialQty = 1,
+}: MealDetailClientProps) {
   const [activeExtra, setActiveExtra] = useState<Extra | null>(null);
-  const [currentQty, setCurrentQty] = useState(1);
+  // Confirmed add-ons: extra id -> quantity.
+  const [addedExtras, setAddedExtras] = useState<Record<string, number>>({});
 
-  const displayPrice = activeExtra ? activeExtra.price * currentQty : basePrice;
+  const extrasTotal = extras.reduce(
+    (sum, extra) => sum + extra.price * (addedExtras[extra.id] ?? 0),
+    0,
+  );
+  const displayPrice = basePrice * initialQty + extrasTotal;
 
-  function openSheet(extra: Extra) {
-    setCurrentQty(1);
-    setActiveExtra(extra);
+  function confirmExtra(qty: number) {
+    if (!activeExtra) return;
+    const extraId = activeExtra.id;
+    setAddedExtras((prev) => {
+      if (qty <= 0) {
+        const next = { ...prev };
+        delete next[extraId];
+        return next;
+      }
+      return { ...prev, [extraId]: qty };
+    });
   }
 
-  function closeSheet() {
-    setActiveExtra(null);
-    setCurrentQty(1);
-  }
+  const activeExtraQty = activeExtra ? (addedExtras[activeExtra.id] ?? 0) : 0;
 
   return (
     <>
-      <MealExtrasCard extras={extras} onExtraSelect={openSheet} />
+      <MealExtrasCard
+        extras={extras}
+        addedQtyById={addedExtras}
+        onExtraSelect={setActiveExtra}
+      />
 
       {activeExtra && (
         <QuantitySheet
           unit={unit}
           price={activeExtra.price}
-          onQtyChange={setCurrentQty}
-          onClose={closeSheet}
-          onConfirm={closeSheet}
+          onClose={() => setActiveExtra(null)}
+          onConfirm={confirmExtra}
+          initialQty={Math.max(1, activeExtraQty)}
+          minQty={activeExtraQty > 0 ? 0 : 1}
         />
       )}
 
-      <MealStickyBar price={displayPrice} unit={unit} />
+      <MealStickyBar price={displayPrice} unit={unit} qty={initialQty} />
     </>
   );
 }
