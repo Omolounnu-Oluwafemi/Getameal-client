@@ -10,9 +10,15 @@ interface KitchenMealGridProps {
   categories: KitchenCategory[];
   meals: KitchenMealItem[];
   isKitchenOpen: boolean;
+  kitchenId: string;
 }
 
-export function KitchenMealGrid({ categories, meals, isKitchenOpen }: KitchenMealGridProps) {
+export function KitchenMealGrid({
+  categories,
+  meals,
+  isKitchenOpen,
+  kitchenId,
+}: KitchenMealGridProps) {
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
 
   const filtered =
@@ -52,7 +58,12 @@ export function KitchenMealGrid({ categories, meals, isKitchenOpen }: KitchenMea
       {/* Grid */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {filtered.map((meal) => (
-          <KitchenMealCard key={meal.id} meal={meal} isKitchenOpen={isKitchenOpen} />
+          <KitchenMealCard
+            key={meal.id}
+            meal={meal}
+            isKitchenOpen={isKitchenOpen}
+            kitchenId={kitchenId}
+          />
         ))}
       </div>
 

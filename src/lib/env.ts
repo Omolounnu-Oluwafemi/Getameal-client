@@ -16,6 +16,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 
   // Server-only
+  API_BASE_URL: z.string().url().default('https://getcooks.onrender.com'),
   // DATABASE_URL: z.string().url(),
 
   // Public (exposed to the browser bundle)
@@ -25,6 +26,7 @@ const envSchema = z.object({
 
 const parsed = envSchema.safeParse({
   NODE_ENV: process.env.NODE_ENV,
+  API_BASE_URL: process.env.API_BASE_URL,
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
 });

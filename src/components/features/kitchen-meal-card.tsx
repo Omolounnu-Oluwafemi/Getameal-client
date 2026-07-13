@@ -11,9 +11,10 @@ import type { KitchenMealItem } from '@/types';
 interface KitchenMealCardProps {
   meal: KitchenMealItem;
   isKitchenOpen: boolean;
+  kitchenId: string;
 }
 
-export function KitchenMealCard({ meal, isKitchenOpen }: KitchenMealCardProps) {
+export function KitchenMealCard({ meal, isKitchenOpen, kitchenId }: KitchenMealCardProps) {
   const [qty, setQty] = useState(0);
   const [toastVisible, setToastVisible] = useState(false);
 
@@ -31,7 +32,7 @@ export function KitchenMealCard({ meal, isKitchenOpen }: KitchenMealCardProps) {
     <article className="relative flex flex-col gap-2.75 overflow-hidden rounded-[20px]">
       {/* Full-card link to the meal detail page */}
       <Link
-        href={`/meals/${meal.id}`}
+        href={`/meals/${meal.id}?kitchen=${kitchenId}${qty > 0 ? `&qty=${qty}` : ''}`}
         className="absolute inset-0 z-10"
         aria-label={`View ${meal.name}`}
       />

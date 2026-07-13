@@ -13,6 +13,7 @@ export default async function OrderConfirmedPage({
   return (
     <OrderConfirmedClient
       orderNumber="#GM2048"
+      sellerId="dev-clinton"
       sellerName="Amaka's Kitchen"
       sellerWhatsApp="2348000000000"
       chatMessage="Hi Amaka's Kitchen, I just placed order #GM2048 on GetaMeal."

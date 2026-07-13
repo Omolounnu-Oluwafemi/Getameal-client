@@ -10,6 +10,7 @@ import { OrderConfirmIcon, WhatsAppIcon } from '../icons';
 
 interface OrderConfirmedClientProps {
   orderNumber: string;
+  sellerId: string;
   sellerName: string;
   sellerWhatsApp: string;
   chatMessage: string;
@@ -24,6 +25,7 @@ const fmt = (n: number) => `₦${n.toLocaleString('en-NG')}`;
 
 export function OrderConfirmedClient({
   orderNumber,
+  sellerId,
   sellerName,
   sellerWhatsApp,
   chatMessage,
@@ -47,7 +49,7 @@ export function OrderConfirmedClient({
       {/* Close button */}
       <div className="flex justify-end">
         <Link
-          href="/meals/m1"
+          href={`/${sellerId}`}
           className="flex h-9 w-9 items-center justify-center rounded-full border border-[#EDEDED] bg-white shadow-[0px_4px_20px_0px_#0000001A]"
           aria-label="Close"
         >
@@ -125,7 +127,7 @@ export function OrderConfirmedClient({
         </a>
 
         <Link
-          href="/meals/m1"
+          href={`/${sellerId}`}
           className="flex h-13 w-full items-center justify-center rounded-full bg-[#F7F7F7] text-sm font-semibold text-black"
         >
           Continue shopping

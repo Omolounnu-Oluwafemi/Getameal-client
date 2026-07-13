@@ -68,6 +68,7 @@ export default function BasketPage() {
       moreMeals={MORE_MEALS}
       pickupDay="Saturday"
       pickupWindow="2:00 PM to 6:00 PM"
+      kitchenId="dev-clinton"
     />
   );
 }

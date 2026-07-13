@@ -26,6 +26,7 @@ interface BasketClientProps {
   moreMeals: KitchenMealItem[];
   pickupDay: string;
   pickupWindow: string;
+  kitchenId: string;
 }
 
 export function BasketClient({
@@ -33,6 +34,7 @@ export function BasketClient({
   moreMeals,
   pickupDay,
   pickupWindow,
+  kitchenId,
 }: BasketClientProps) {
   const [items, setItems] = useState<CartItem[]>(initialItems);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -56,7 +58,7 @@ export function BasketClient({
         <div className="sticky top-0 z-30 flex items-center justify-between bg-[#FFFFFFE5] px-5 pt-[max(2rem,calc(env(safe-area-inset-top)+0.5rem))] pb-5 backdrop-blur-[20px]">
           <h1 className="text-2xl font-bold text-black">Your Basket</h1>
           <Link
-            href="/meals/m1"
+            href={`/${kitchenId}`}
             className="flex h-9 w-9 items-center justify-center rounded-full border border-neutral-200 bg-white"
             aria-label="Close basket"
           >
@@ -95,7 +97,7 @@ export function BasketClient({
               <div className="-mx-5 flex scrollbar-none gap-3 overflow-x-auto px-5 pb-2">
                 {moreMeals.map((meal) => (
                   <div key={meal.id} className="w-47.75 shrink-0">
-                    <KitchenMealCard meal={meal} isKitchenOpen />
+                    <KitchenMealCard meal={meal} isKitchenOpen kitchenId={kitchenId} />
                   </div>
                 ))}
               </div>
