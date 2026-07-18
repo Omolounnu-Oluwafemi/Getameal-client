@@ -5,12 +5,16 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
-import { OrderConfirmIcon } from '../icons';
+import { Toast } from '@/components/ui/toast';
+import { submitReview } from '@/lib/reviews';
+import { OrderConfirmIcon, StarIcon } from '../icons';
 
 interface LeaveReviewClientProps {
   orderId: string;
   sellerId: string;
+  cookId: string;
   sellerName: string;
   sellerLocation: string;
   ordersCompleted: number;
@@ -21,6 +25,7 @@ interface LeaveReviewClientProps {
 export function LeaveReviewClient({
   orderId,
   sellerId,
+  cookId,
   sellerName,
   sellerLocation,
   ordersCompleted,
@@ -30,20 +35,40 @@ export function LeaveReviewClient({
   const router = useRouter();
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  function handleSubmit() {
-    if (!rating) return;
-    // TODO: POST { orderId, sellerId, customerName, whatsappNumber, rating, comment }
-    // to the reviews API when the backend is ready.
-    void orderId;
-    void customerName;
-    void whatsappNumber;
-    void comment;
-    router.push(`/${sellerId}/reviews`);
+  // The reviews API requires the customer's phone — the WhatsApp review link
+  // carries it as a query param.
+  const phoneDigits = whatsappNumber.replace(/\D/g, '');
+  const canSubmit = rating > 0 && phoneDigits.length >= 10;
+
+  async function handleSubmit() {
+    if (!canSubmit || submitting) return;
+    setSubmitting(true);
+
+    const result = await submitReview({
+      targetId: cookId,
+      targetType: 'cook',
+      rating,
+      comment: comment.trim(),
+      customerName,
+      customerPhone: `0${phoneDigits.replace(/^0+/, '')}`,
+      orderId,
+      storeHandle: sellerId,
+    });
+
+    if ('review' in result) {
+      router.push(`/${sellerId}/reviews`);
+      return;
+    }
+
+    setSubmitting(false);
+    setErrorMessage(result.error);
   }
 
   return (
-    <div className="min-h-screen bg-white pb-32">
+    <div className="min-h-screen bg-white pb-56">
       {/* Header */}
       <div className="relative flex items-center justify-center px-5 pt-8 pb-4">
         <Link
@@ -78,7 +103,7 @@ export function LeaveReviewClient({
 
       {/* Prompt */}
       <div className="px-5 pt-8">
-        <h2 className="text-2xl leading-snug font-bold text-black">
+        <h2 className="text-[20px] leading-snug font-bold text-black">
           How was your order from {sellerName}?
         </h2>
         <p className="mt-3 text-sm text-black">It takes less than a minute.</p>
@@ -92,15 +117,9 @@ export function LeaveReviewClient({
             onClick={() => setRating(star)}
             aria-label={`${star} star${star > 1 ? 's' : ''}`}
           >
-            <svg
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              className={`h-12 w-12 transition-colors ${
-                star <= rating ? 'text-[#E2542C]' : 'text-[#D9D9D9]'
-              }`}
-            >
-              <path d="M12 2.5l2.94 5.955 6.573.955-4.756 4.635 1.122 6.545L12 17.5l-5.879 3.09 1.122-6.545L2.487 9.41l6.572-.955L12 2.5z" />
-            </svg>
+            <StarIcon
+              className={`h-12 w-12 transition-all ${star <= rating ? '' : 'opacity-30 grayscale'}`}
+            />
           </button>
         ))}
       </div>
@@ -112,20 +131,32 @@ export function LeaveReviewClient({
           placeholder="Enter comment here"
           value={comment}
           onChange={(e) => setComment(e.target.value)}
+          onFocus={(e) => {
+            // Wait for the keyboard animation, then lift the field above the
+            // fixed submit bar.
+            const el = e.target;
+            setTimeout(() => el.scrollIntoView({ block: 'center', behavior: 'smooth' }), 300);
+          }}
         />
       </div>
 
       {/* Fixed submit button */}
-      <div className="fixed inset-x-0 bottom-0 z-30 bg-white px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+      <div className="fixed inset-x-0 bottom-0 z-30 rounded-t-[20px] bg-white px-5 pt-5 pb-[max(2.5rem,env(safe-area-inset-bottom))] shadow-[0px_-4px_20px_0px_#0000000D]">
         <Button
           variant="brand"
           onClick={handleSubmit}
-          disabled={!rating}
+          disabled={!canSubmit || submitting}
           className="h-13 w-full rounded-full text-sm font-semibold disabled:opacity-50"
         >
-          Submit review
+          {submitting ? (
+            <Spinner className="h-5 w-5 border-2 border-white/30 border-t-white" />
+          ) : (
+            'Submit review'
+          )}
         </Button>
       </div>
+
+      {errorMessage && <Toast message={errorMessage} onClose={() => setErrorMessage(null)} />}
     </div>
   );
 }
