@@ -1,14 +1,8 @@
 import Link from 'next/link';
-import { CustomOrderForm } from '@/components/features/custom-order-form';
+import { notFound } from 'next/navigation';
 
-// ---------------------------------------------------------------------------
-// Mock — mirrors getKitchen in the parent kitchen page.
-// Replace with an API call when the backend is ready.
-// ---------------------------------------------------------------------------
-function getKitchenName(kitchenId: string): string {
-  void kitchenId;
-  return 'Sandra Kitchen';
-}
+import { CustomOrderForm } from '@/components/features/custom-order-form';
+import { getStore } from '@/lib/api';
 
 // ---------------------------------------------------------------------------
 // Page
@@ -19,7 +13,8 @@ export default async function CustomOrderPage({
   params: Promise<{ kitchenId: string }>;
 }) {
   const { kitchenId } = await params;
-  const kitchenName = getKitchenName(kitchenId);
+  const data = await getStore(kitchenId);
+  if (!data) notFound();
 
   return (
     <div className="min-h-screen bg-white pb-32">
@@ -46,7 +41,11 @@ export default async function CustomOrderPage({
         </div>
 
         {/* Form (client component) */}
-        <CustomOrderForm kitchenName={kitchenName} />
+        <CustomOrderForm
+          kitchenName={data.store.storeName}
+          deliveryEnabled={data.store.deliveryEnabled}
+          deliveryFee={data.store.deliveryFee}
+        />
       </div>
     </div>
   );

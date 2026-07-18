@@ -185,11 +185,21 @@ function DatePicker({ value, onChange, onClose }: DatePickerProps) {
 // ---------------------------------------------------------------------------
 const LABEL = 'mb-2 block font-inter text-sm font-normal leading-5 text-black';
 
+type DeliveryOption = 'pickup' | 'delivery' | null;
+
 interface CustomOrderFormProps {
   kitchenName: string;
+  deliveryEnabled: boolean;
+  deliveryFee: number;
 }
 
-export function CustomOrderForm({ kitchenName }: CustomOrderFormProps) {
+const fmtNaira = (n: number) => `₦${n.toLocaleString('en-NG')}`;
+
+export function CustomOrderForm({
+  kitchenName,
+  deliveryEnabled,
+  deliveryFee,
+}: CustomOrderFormProps) {
   const router = useRouter();
   const { kitchenId } = useParams<{ kitchenId: string }>();
   const [order, setOrder] = useState('');
@@ -198,6 +208,47 @@ export function CustomOrderForm({ kitchenName }: CustomOrderFormProps) {
   const [name, setName] = useState('');
   const [date, setDate] = useState<Date | null>(null);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [deliveryType, setDeliveryType] = useState<DeliveryOption>(null);
+  const [address, setAddress] = useState('');
+  const [deliveryDropdownOpen, setDeliveryDropdownOpen] = useState(false);
+
+  const canSubmit =
+    order.trim().length > 0 &&
+    name.trim().length > 0 &&
+    phone.replace(/\D/g, '').length >= 10 &&
+    date !== null &&
+    deliveryType !== null &&
+    (deliveryType !== 'delivery' || address.trim().length > 0);
+
+  const deliveryLabel =
+    deliveryType === 'pickup'
+      ? 'Pickup - Free'
+      : deliveryType === 'delivery'
+        ? `Delivery - ${fmtNaira(deliveryFee)}`
+        : 'Select option';
+
+  function handleSubmit() {
+    if (!canSubmit || !date || !deliveryType) return;
+
+    // Midday keeps the chosen day stable across timezones.
+    const ready = new Date(date);
+    ready.setHours(12, 0, 0, 0);
+
+    // Read by the preview page, which submits the request on confirmation.
+    sessionStorage.setItem(
+      'custom_order_request',
+      JSON.stringify({
+        foodRequest: order.trim(),
+        notes: notes.trim(),
+        name: name.trim(),
+        phone: phone.replace(/\D/g, '').replace(/^0+/, ''),
+        readyDate: ready.toISOString(),
+        deliveryType,
+        address: deliveryType === 'delivery' ? address.trim() : '',
+      }),
+    );
+    router.push(`/${kitchenId}/custom-order/checkout`);
+  }
 
   return (
     <>
@@ -278,6 +329,101 @@ export function CustomOrderForm({ kitchenName }: CustomOrderFormProps) {
             </svg>
           </button>
         </div>
+
+        {/* Delivery method */}
+        <div>
+          <label className={LABEL}>How will you get your order?</label>
+          <div className="relative">
+            <button
+              onClick={() => setDeliveryDropdownOpen((o) => !o)}
+              className="hover:border-brand flex h-13.75 w-full items-center justify-between rounded-full border border-[#E1E1E1] bg-white py-2.5 pr-4 pl-6 text-sm transition-colors"
+            >
+              <span className={deliveryType ? 'text-neutral-900' : 'text-neutral-400'}>
+                {deliveryLabel}
+              </span>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path
+                  d="M4 6l4-4 4 4M4 10l4 4 4-4"
+                  stroke="currentColor"
+                  strokeWidth="1.3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+
+            {deliveryDropdownOpen && (
+              <div className="absolute top-full right-0 z-10 mt-1 w-[90%] overflow-hidden rounded-2xl border border-[#EDEDED] bg-white shadow-[0px_4px_20px_0px_#0000001A]">
+                <button
+                  onClick={() => {
+                    setDeliveryType('pickup');
+                    setDeliveryDropdownOpen(false);
+                  }}
+                  className="flex w-full items-center justify-between p-4 text-left hover:bg-neutral-50"
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-black">Pickup - Free</p>
+                    <p className="text-xs text-neutral-500">
+                      Collect from the seller&rsquo;s pickup location.
+                    </p>
+                  </div>
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path
+                      d="M6 12l4-4-4-4"
+                      stroke="currentColor"
+                      strokeWidth="1.3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+                {deliveryEnabled && (
+                  <>
+                    <div className="mx-4 h-px bg-[#EDEDED]" />
+                    <button
+                      onClick={() => {
+                        setDeliveryType('delivery');
+                        setDeliveryDropdownOpen(false);
+                      }}
+                      className="flex w-full items-center justify-between p-4 text-left hover:bg-neutral-50"
+                    >
+                      <div>
+                        <p className="text-sm font-semibold text-black">
+                          Delivery - {fmtNaira(deliveryFee)}
+                        </p>
+                        <p className="text-xs text-neutral-500">
+                          Get it delivered to your address.
+                        </p>
+                      </div>
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path
+                          d="M6 12l4-4-4-4"
+                          stroke="currentColor"
+                          strokeWidth="1.3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Delivery address */}
+        {deliveryType === 'delivery' && (
+          <div>
+            <label className={LABEL}>Delivery address</label>
+            <Input
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="Enter your address"
+            />
+          </div>
+        )}
       </div>
 
       {datePickerOpen && (
@@ -288,8 +434,9 @@ export function CustomOrderForm({ kitchenName }: CustomOrderFormProps) {
         <div className="mx-auto max-w-lg">
           <Button
             variant="brand"
-            onClick={() => router.push(`/${kitchenId}/custom-order/checkout`)}
-            className="h-14 w-full rounded-full text-base font-semibold"
+            onClick={handleSubmit}
+            disabled={!canSubmit}
+            className="h-14 w-full rounded-full text-base font-semibold disabled:opacity-50"
           >
             Send request
           </Button>
