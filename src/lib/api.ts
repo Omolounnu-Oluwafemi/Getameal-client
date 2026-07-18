@@ -1,4 +1,5 @@
 import { env } from './env';
+import type { OrderDetails } from './orders';
 
 // ---------------------------------------------------------------------------
 // API response types — mirror the getcooks backend payloads.
@@ -31,6 +32,7 @@ export interface ApiProduct {
 
 export interface ApiStore {
   id: string;
+  cookId: string;
   storeName: string;
   storeHandle: string;
   storeLink: string;
@@ -96,6 +98,112 @@ export async function getProduct(
   const data = await getStore(handle);
   const product = data?.products.find((p) => p.id === productId);
   return data && product ? { store: data.store, product } : null;
+}
+
+export interface VerifiedOrder {
+  id: string;
+  status: string;
+  paymentStatus: string;
+  // Present on first verification, omitted on the "Already processed" repeat.
+  customerName?: string;
+  totalAmount?: number;
+}
+
+/**
+ * Verify a Paystack payment after the customer is redirected back with
+ * ?trxref=...&reference=... — the backend confirms with Paystack and marks
+ * the order paid. Returns the verified order, or null when verification fails.
+ */
+export async function verifyPayment(
+  reference: string,
+  trxref?: string,
+): Promise<VerifiedOrder | null> {
+  try {
+    const params = new URLSearchParams({ reference, trxref: trxref ?? reference });
+    const res = await fetch(`${env.API_BASE_URL}/api/orders/payment/callback?${params}`, {
+      method: 'POST',
+      cache: 'no-store',
+    });
+    if (!res.ok) return null;
+
+    const data = (await res.json()) as { order?: VerifiedOrder };
+    return data.order ?? null;
+  } catch (error) {
+    console.error(`Failed to verify payment "${reference}":`, error);
+    return null;
+  }
+}
+
+/**
+ * Server-side order lookup (phone-guarded) — used by the receipt page, where
+ * the phone arrives as a query param on the shared link.
+ */
+export async function getOrder(orderId: string, phone: string): Promise<OrderDetails | null> {
+  try {
+    const res = await fetch(
+      `${env.API_BASE_URL}/api/customers/orders/${encodeURIComponent(orderId)}?phone=${encodeURIComponent(phone)}`,
+      { cache: 'no-store' },
+    );
+    if (!res.ok) return null;
+
+    const data = (await res.json()) as { success: boolean; order?: OrderDetails };
+    return data.success && data.order ? data.order : null;
+  } catch (error) {
+    console.error(`Failed to fetch order "${orderId}":`, error);
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Reviews
+// ---------------------------------------------------------------------------
+export interface ApiReview {
+  id: string;
+  rating: number;
+  comment: string;
+  customerName: string;
+  createdAt: string;
+}
+
+export interface CookReviews {
+  success: boolean;
+  averageRating: number;
+  total: number;
+  reviews: ApiReview[];
+}
+
+/** Fetch a cook's reviews. Returns null when the API is unreachable. */
+export async function getCookReviews(cookId: string): Promise<CookReviews | null> {
+  try {
+    const res = await fetch(`${env.API_BASE_URL}/api/reviews/cook/${encodeURIComponent(cookId)}`, {
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) return null;
+
+    const data = (await res.json()) as CookReviews;
+    return data.success ? data : null;
+  } catch (error) {
+    console.error(`Failed to fetch reviews for cook "${cookId}":`, error);
+    return null;
+  }
+}
+
+/** "2026-07-17T…" → "2 days ago" style label. */
+export function timeAgo(dateString: string): string {
+  const seconds = Math.max(0, (Date.now() - new Date(dateString).getTime()) / 1000);
+  const units: [label: string, seconds: number][] = [
+    ['year', 31_536_000],
+    ['month', 2_592_000],
+    ['week', 604_800],
+    ['day', 86_400],
+    ['hour', 3_600],
+    ['minute', 60],
+  ];
+  for (const [label, size] of units) {
+    const value = Math.floor(seconds / size);
+    if (value >= 1) return `${value} ${label}${value > 1 ? 's' : ''} ago`;
+  }
+  return 'Just now';
 }
 
 /** "per_plate" → "Plate", "per_litre" → "Litre", etc. */

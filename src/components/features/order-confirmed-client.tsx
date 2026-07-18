@@ -1,14 +1,22 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { StaticImageData } from 'next/image';
 
 import { buttonVariants } from '@/components/ui/button';
+import { clearCart } from '@/lib/cart';
 import { cn } from '@/lib/utils';
+import { getOrderDetails } from '@/lib/orders';
+import type { OrderDetails } from '@/lib/orders';
 import { OrderConfirmIcon, WhatsAppIcon } from '../icons';
 
 interface OrderConfirmedClientProps {
+  /** true/false = Paystack verification result; null = no reference (dev navigation). */
+  paymentConfirmed?: boolean | null;
+  /** When present, real order details are fetched to replace the fallbacks below. */
+  orderId?: string;
   orderNumber: string;
   sellerId: string;
   sellerName: string;
@@ -24,24 +32,71 @@ interface OrderConfirmedClientProps {
 const fmt = (n: number) => `₦${n.toLocaleString('en-NG')}`;
 
 export function OrderConfirmedClient({
+  paymentConfirmed = null,
+  orderId,
   orderNumber,
   sellerId,
   sellerName,
   sellerWhatsApp,
   chatMessage,
-  deliveryMethod,
+  deliveryMethod: deliveryMethodProp,
   pickupAddress,
   pickupImage,
   readyTime,
   amountPaid,
 }: OrderConfirmedClientProps) {
-  const chatHref = `https://wa.me/${sellerWhatsApp}?text=${encodeURIComponent(chatMessage)}`;
+  const [order, setOrder] = useState<OrderDetails | null>(null);
+
+  // The order is paid — the basket's job is done.
+  useEffect(() => {
+    if (paymentConfirmed) void clearCart();
+  }, [paymentConfirmed]);
+
+  useEffect(() => {
+    if (!orderId) return;
+    let cancelled = false;
+
+    // The phone used at checkout guards the order lookup.
+    let phone = '';
+    try {
+      const raw = sessionStorage.getItem('checkout_details');
+      phone = raw ? ((JSON.parse(raw).phone as string) ?? '') : '';
+    } catch {
+      // corrupt storage — skip the lookup
+    }
+    if (!phone) return;
+
+    getOrderDetails(orderId, `0${phone.replace(/^0+/, '')}`).then((result) => {
+      if (!cancelled && result) setOrder(result);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [orderId]);
+
+  // Prefer real order data; fall back to the props (mock/dev values).
+  const deliveryMethod = order?.deliveryType ?? deliveryMethodProp;
+  const displaySellerId = order?.cook.storeHandle ?? sellerId;
+  const displaySellerName = order?.cook.storeName ?? sellerName;
+  const displaySellerWhatsApp = order ? `234${order.cook.phone.replace(/^0+/, '')}` : sellerWhatsApp;
+  const displayOrderNumber = order ? `#${order.id.slice(-6).toUpperCase()}` : orderNumber;
+  const displayReadyTime = order
+    ? `${new Date(order.readyDate).toLocaleDateString('en-NG', { weekday: 'long' })}, ${order.readyTime}`
+    : readyTime;
+  const displayAmountPaid = order ? Math.round(order.totalAmount) : amountPaid;
+  const displayPickupAddress = order ? order.cook.kitchenAddress : pickupAddress;
+  const displayChatMessage = order
+    ? `Hi ${displaySellerName}, I just placed order ${displayOrderNumber} on GetaMeal.`
+    : chatMessage;
+
+  const chatHref = `https://wa.me/${displaySellerWhatsApp}?text=${encodeURIComponent(displayChatMessage)}`;
   const rows = [
-    { label: 'Order number', value: orderNumber },
-    { label: 'Seller', value: sellerName },
+    { label: 'Order number', value: displayOrderNumber },
+    { label: 'Seller', value: displaySellerName },
     { label: "How you'll get it", value: deliveryMethod === 'delivery' ? 'Delivered' : 'Pickup' },
-    { label: 'Ready time', value: readyTime },
-    { label: 'Amount paid', value: fmt(amountPaid) },
+    { label: 'Ready time', value: displayReadyTime },
+    { label: 'Amount paid', value: fmt(displayAmountPaid) },
   ];
 
   return (
@@ -49,7 +104,7 @@ export function OrderConfirmedClient({
       {/* Close button */}
       <div className="flex justify-end">
         <Link
-          href={`/${sellerId}`}
+          href={`/${displaySellerId}`}
           className="flex h-9 w-9 items-center justify-center rounded-full border border-[#EDEDED] bg-white shadow-[0px_4px_20px_0px_#0000001A]"
           aria-label="Close"
         >
@@ -63,6 +118,19 @@ export function OrderConfirmedClient({
           </svg>
         </Link>
       </div>
+
+      {/* Payment not confirmed banner */}
+      {paymentConfirmed === false && (
+        <div className="mt-4 rounded-2xl border border-[#FFD7D6] bg-[#FFF5F5] p-4">
+          <p className="text-sm font-semibold text-[#B42318]">
+            We couldn&apos;t confirm your payment yet
+          </p>
+          <p className="mt-1 text-sm text-[#5C5C5C]">
+            If you completed the payment, it may still be processing — check back shortly or reach
+            out to us on WhatsApp.
+          </p>
+        </div>
+      )}
 
       {/* Checkmark */}
       <div className="mt-2 flex flex-col items-center text-center">
@@ -83,12 +151,12 @@ export function OrderConfirmedClient({
 
       <div className="mt-10 space-y-4">
         {/* Pickup address card */}
-        {deliveryMethod === 'pickup' && pickupAddress && (
+        {deliveryMethod === 'pickup' && displayPickupAddress && (
           <div className="flex items-center gap-2 rounded-2xl border border-[#EDEDED] bg-white p-4 shadow-[0px_10px_20px_0px_#0000000D]">
             {pickupImage && <OrderConfirmIcon className="shrink-0" />}
             <div>
               <p className="text-base font-semibold text-black">Pickup address</p>
-              <p className="mt-0.5 text-sm text-neutral-500">{pickupAddress}</p>
+              <p className="mt-0.5 text-sm text-neutral-500">{displayPickupAddress}</p>
             </div>
           </div>
         )}
@@ -127,7 +195,7 @@ export function OrderConfirmedClient({
         </a>
 
         <Link
-          href={`/${sellerId}`}
+          href={`/${displaySellerId}`}
           className="flex h-13 w-full items-center justify-center rounded-full bg-[#F7F7F7] text-sm font-semibold text-black"
         >
           Continue shopping

@@ -1,58 +1,154 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import type { StaticImageData } from 'next/image';
+
+import soupImg from '../../../public/images/kitchen/soup.png';
 
 import { Button } from '@/components/ui/button';
-import { BackArrowIcon, OrderConfirmIcon } from '@/components/icons';
+import { Spinner } from '@/components/ui/spinner';
+import { Toast } from '@/components/ui/toast';
+import { getCart } from '@/lib/cart';
+import { createOrder } from '@/lib/orders';
+import { BackArrowIcon, OrderConfirmIcon } from '../icons';
 
-interface AddOn {
-  name: string;
-  qty: number;
-  price: number;
-}
-
-interface OrderItem {
-  id: string;
-  name: string;
-  qty: number;
-  unit: string;
-  price: number;
-  image: StaticImageData;
-  addOns?: AddOn[];
-}
-
-interface Kitchen {
+interface KitchenInfo {
   name: string;
   location: string;
   ordersCompleted: number;
-  avatar: StaticImageData;
 }
 
 interface ConfirmPayClientProps {
   deliveryMethod: 'pickup' | 'delivery';
   deliveryFee: number;
-  kitchen: Kitchen;
-  items: OrderItem[];
+  kitchenId: string;
+  preparationDays: number;
+  /** "HH:mm" — start of the store's pickup window. */
+  readyTime: string;
+  kitchen: KitchenInfo;
+}
+
+interface CheckoutDetails {
+  name: string;
+  phone: string;
+  delivery: string;
+  address: string;
+  note: string;
+}
+
+interface OrderLine {
+  id: string;
+  productId: string;
+  name: string;
+  qty: number;
+  price: number;
+  image: string;
+  addOns: { name: string; price: number }[];
 }
 
 const fmt = (n: number) => `₦${n.toLocaleString('en-NG')}`;
 
+/** Collapse repeated add-on entries (one per unit) into name + count rows. */
+function groupAddOns(addOns: OrderLine['addOns']) {
+  const groups = new Map<string, { name: string; price: number; qty: number }>();
+  for (const addOn of addOns) {
+    const existing = groups.get(addOn.name);
+    if (existing) {
+      existing.qty += 1;
+    } else {
+      groups.set(addOn.name, { name: addOn.name, price: addOn.price, qty: 1 });
+    }
+  }
+  return [...groups.values()];
+}
+
 export function ConfirmPayClient({
   deliveryMethod,
   deliveryFee,
+  kitchenId,
+  preparationDays,
+  readyTime,
   kitchen,
-  items,
 }: ConfirmPayClientProps) {
-  const router = useRouter();
-  const itemsTotal = items.reduce((sum, item) => {
-    const addOnTotal = item.addOns?.reduce((s, a) => s + a.price * a.qty, 0) ?? 0;
-    return sum + item.price * item.qty + addOnTotal;
-  }, 0);
+  // null = cart still loading.
+  const [items, setItems] = useState<OrderLine[] | null>(null);
+  const [details, setDetails] = useState<CheckoutDetails | null>(null);
+  const [readyDay, setReadyDay] = useState('');
+  const [paying, setPaying] = useState(false);
+  const [errorVisible, setErrorVisible] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    try {
+      const raw = sessionStorage.getItem('checkout_details');
+      if (raw) setDetails(JSON.parse(raw) as CheckoutDetails);
+    } catch {
+      // corrupt storage — fall back to defaults
+    }
+
+    setReadyDay(
+      new Date(Date.now() + preparationDays * 86_400_000).toLocaleDateString('en-NG', {
+        weekday: 'long',
+      }),
+    );
+
+    getCart().then((cart) => {
+      if (cancelled) return;
+      setItems(
+        (cart?.items ?? []).map((item) => ({
+          id: item.productId,
+          productId: item.productId,
+          name: item.name,
+          qty: item.quantity,
+          price: Math.round(item.customerPrice),
+          image: item.image,
+          addOns: item.addOns.map((a) => ({ name: a.name, price: a.price })),
+        })),
+      );
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [preparationDays]);
+
+  const itemsTotal = (items ?? []).reduce(
+    (sum, item) => sum + item.price * item.qty + item.addOns.reduce((s, a) => s + a.price, 0),
+    0,
+  );
   const shippingCost = deliveryMethod === 'delivery' ? deliveryFee : 0;
   const totalToPay = itemsTotal + shippingCost;
+
+  async function handlePay() {
+    if (paying || !items || items.length === 0) return;
+    setPaying(true);
+
+    const ready = new Date(Date.now() + preparationDays * 86_400_000);
+    const [hours, minutes] = readyTime.split(':').map(Number);
+    ready.setHours(hours || 12, minutes || 0, 0, 0);
+
+    // The backend reads the items, store, and delivery fee from the cart.
+    const order = await createOrder({
+      customerName: details?.name || 'Guest',
+      customerPhone: details?.phone ? `0${details.phone.replace(/^0+/, '')}` : '',
+      customerNote: details?.note || undefined,
+      deliveryType: deliveryMethod,
+      deliveryAddress:
+        deliveryMethod === 'delivery' ? details?.address || undefined : undefined,
+      readyDate: ready.toISOString(),
+    });
+
+    if (order?.paymentLink) {
+      // Hand off to Paystack; keep the button disabled while the browser leaves.
+      window.location.assign(order.paymentLink);
+      return;
+    }
+
+    setPaying(false);
+    setErrorVisible(true);
+  }
 
   return (
     <div className="min-h-screen bg-white pb-36">
@@ -87,14 +183,15 @@ export function ConfirmPayClient({
 
         <div className="my-4 px-5">
           <p className="text-base font-medium text-black">
-            {deliveryMethod === 'delivery' ? 'Delivery Tomorrow' : 'Pickup — Free'}
+            {deliveryMethod === 'delivery' ? `Delivery ${readyDay}` : 'Pickup — Free'}
           </p>
           <div className="mt-1 flex justify-between gap-4">
             <p
               className={`text-sm ${deliveryMethod === 'delivery' ? 'text-[#5C5C5C]' : 'text-neutral-500'}`}
             >
               {deliveryMethod === 'delivery'
-                ? 'You’ll get delivery updates on WhatsApp when your order is ready.'
+                ? details?.address ||
+                  'You’ll get delivery updates on WhatsApp when your order is ready.'
                 : 'Pickup from ' + kitchen.location}
             </p>
             <svg className="shrink-0" width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -120,32 +217,57 @@ export function ConfirmPayClient({
         <div className="divide-y divide-[#EDEDED] rounded-[20px] border border-[#EDEDED] bg-white shadow-[0px_4px_20px_0px_#0000000D]">
           <h2 className="p-4 text-base font-bold text-black">Your order</h2>
 
-          {items.map((item) => (
-            <div key={item.id}>
-              {/* Main item row */}
-              <div className="flex items-center gap-3 p-4">
-                <div className="relative h-12.75 w-13.75 shrink-0 overflow-hidden rounded-[14px] bg-neutral-100">
-                  <Image src={item.image} alt={item.name} fill className="object-cover" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-black">{item.name}</p>
-                  <p className="text-sm font-medium text-black">
-                    Qty {item.qty} {item.unit} · {fmt(item.price)} each
-                  </p>
-                </div>
-              </div>
-
-              {/* Add-ons */}
-              {item.addOns?.map((addon, i) => (
-                <div key={i} className="mx-4 mb-4 rounded-[14px] border border-[#EDEDED] px-4 py-3">
-                  <p className="text-sm font-semibold text-black">{addon.name}</p>
-                  <p className="text-sm font-medium text-black">
-                    Qty {addon.qty} · {fmt(addon.price)} each
-                  </p>
-                </div>
-              ))}
+          {items === null ? (
+            <div className="flex justify-center py-10">
+              <Spinner />
             </div>
-          ))}
+          ) : items.length === 0 ? (
+            <div className="flex flex-col items-center gap-2 py-10 text-center">
+              <p className="text-sm font-semibold text-black">Your basket is empty</p>
+              <Link href={`/${kitchenId}`} className="text-brand text-sm font-semibold">
+                Browse the kitchen
+              </Link>
+            </div>
+          ) : (
+            items.map((item) => (
+              <div key={item.id}>
+                {/* Main item row */}
+                <div className="flex items-center gap-3 p-4">
+                  <div className="relative h-12.75 w-13.75 shrink-0 overflow-hidden rounded-[14px] bg-neutral-100">
+                    <Image
+                      src={
+                        item.image?.startsWith('https://res.cloudinary.com/')
+                          ? item.image
+                          : soupImg
+                      }
+                      alt={item.name}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-black">{item.name}</p>
+                    <p className="text-sm font-medium text-black">
+                      Qty {item.qty} · {fmt(item.price)} each
+                    </p>
+                  </div>
+                </div>
+
+                {/* Add-ons */}
+                {groupAddOns(item.addOns).map((addon) => (
+                  <div
+                    key={addon.name}
+                    className="mx-4 mb-4 rounded-[14px] border border-[#EDEDED] px-4 py-3"
+                  >
+                    <p className="text-sm font-semibold text-black">{addon.name}</p>
+                    <p className="text-sm font-medium text-black">
+                      Qty {addon.qty} · {fmt(addon.price)} each
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ))
+          )}
         </div>
       </div>
 
@@ -174,6 +296,9 @@ export function ConfirmPayClient({
               <span className="text-sm font-bold text-black">{fmt(totalToPay)}</span>
             </div>
           </div>
+          <p className="mt-3 text-xs text-neutral-500">
+            A small service fee is added at payment.
+          </p>
         </div>
       </div>
 
@@ -185,12 +310,24 @@ export function ConfirmPayClient({
       <div className="fixed inset-x-0 bottom-0 z-30 bg-white px-5 pt-4 pb-10 shadow-[0px_-4px_20px_0px_#0000001A]">
         <Button
           variant="brand"
-          onClick={() => router.push(`/order-confirmed?method=${deliveryMethod}`)}
-          className="h-13 w-full rounded-full text-sm font-semibold"
+          onClick={handlePay}
+          disabled={paying || !items || items.length === 0}
+          className="h-13 w-full rounded-full text-sm font-semibold disabled:opacity-50"
         >
-          Pay — {fmt(totalToPay)}
+          {paying ? (
+            <Spinner className="h-5 w-5 border-2 border-white/30 border-t-white" />
+          ) : (
+            `Pay — ${fmt(totalToPay)}`
+          )}
         </Button>
       </div>
+
+      {errorVisible && (
+        <Toast
+          message="Couldn't create your order. Please try again."
+          onClose={() => setErrorVisible(false)}
+        />
+      )}
     </div>
   );
 }

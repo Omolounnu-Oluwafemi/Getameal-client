@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import type { StaticImageData } from 'next/image';
+import type { ImageSrc } from '@/types';
 
 import { Button } from '@/components/ui/button';
 import { BackArrowIcon } from '../icons';
@@ -19,7 +19,7 @@ interface ReceiptItem {
   qty: number;
   unit: string;
   price: number;
-  image: StaticImageData;
+  image: ImageSrc;
   addOns?: ReceiptAddOn[];
 }
 

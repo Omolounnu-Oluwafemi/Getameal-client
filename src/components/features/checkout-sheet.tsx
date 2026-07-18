@@ -10,10 +10,11 @@ type DeliveryOption = 'pickup' | 'delivery' | null;
 
 interface CheckoutSheetProps {
   onClose: () => void;
+  kitchenId: string;
   deliveryFee?: number;
 }
 
-export function CheckoutSheet({ onClose, deliveryFee = 2300 }: CheckoutSheetProps) {
+export function CheckoutSheet({ onClose, kitchenId, deliveryFee = 2300 }: CheckoutSheetProps) {
   const router = useRouter();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -43,7 +44,12 @@ export function CheckoutSheet({ onClose, deliveryFee = 2300 }: CheckoutSheetProp
 
   function handleContinue() {
     if (!delivery) return;
-    router.push(`/checkout?method=${delivery}`);
+    // Read on the confirm-and-pay page when creating the order.
+    sessionStorage.setItem(
+      'checkout_details',
+      JSON.stringify({ name, phone, delivery, address, note }),
+    );
+    router.push(`/checkout?method=${delivery}&kitchen=${kitchenId}`);
   }
 
   const fmt = (n: number) => `₦${n.toLocaleString('en-NG')}`;
@@ -83,29 +89,29 @@ export function CheckoutSheet({ onClose, deliveryFee = 2300 }: CheckoutSheetProp
           <div className="h-1.5 w-16 rounded-full bg-[#989898]" />
         </div>
 
-        {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto pb-6">
-          {/* Header */}
-          <div className="relative mb-6 flex items-center justify-center px-12 pt-4 pb-4">
-            <h2 className="text-center text-base leading-tight font-semibold text-[#0F0F0F]">
-              How should we confirm your order?
-            </h2>
-            <button
-              onClick={onClose}
-              className="absolute top-1/2 right-5 flex h-8 w-8 shrink-0 -translate-y-1/2 items-center justify-center rounded-full border border-neutral-200 bg-white"
-              aria-label="Close"
-            >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path
-                  d="M11 3L3 11M3 3l8 8"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </button>
-          </div>
+        {/* Pinned header — stays put while the body scrolls */}
+        <div className="relative flex shrink-0 items-center justify-center px-12 pt-4 pb-4">
+          <h2 className="text-center text-base leading-tight font-semibold text-[#0F0F0F]">
+            How should we confirm your order?
+          </h2>
+          <button
+            onClick={onClose}
+            className="absolute top-1/2 right-5 flex h-8 w-8 shrink-0 -translate-y-1/2 items-center justify-center rounded-full border border-neutral-200 bg-white"
+            aria-label="Close"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path
+                d="M11 3L3 11M3 3l8 8"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
+        </div>
 
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto pt-2 pb-6">
           <p className="w-[80%] px-5 pb-4 text-sm text-black">
             Enter your details and choose how you want to receive your order.
           </p>
@@ -167,7 +173,7 @@ export function CheckoutSheet({ onClose, deliveryFee = 2300 }: CheckoutSheetProp
                 </button>
 
                 {dropdownOpen && (
-                  <div className="absolute top-full right-0 z-10 mt-1 w-[90%] overflow-hidden rounded-2xl border border-[#EDEDED] bg-white shadow-[0px_4px_20px_0px_#0000001A]">
+                  <div className="mt-2 overflow-hidden rounded-2xl border border-[#EDEDED] bg-white shadow-[0px_4px_20px_0px_#0000001A]">
                     <button
                       onClick={() => {
                         setDelivery('pickup');
