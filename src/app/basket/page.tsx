@@ -1,74 +1,48 @@
 import soupImg from '../../../public/images/kitchen/soup.png';
-import spicyJollofImg from '../../../public/images/kitchen/spicy-smoky-jollof.png';
-import stewImg from '../../../public/images/kitchen/stew-and-sauce.png';
-import friedRiceImg from '../../../public/images/kitchen/fried-rice-special.png';
-import meatPlaterImg from '../../../public/images/kitchen/meat-plater.png';
 
 import { BasketClient } from '@/components/features/basket-client';
+import { getStore, unitLabel } from '@/lib/api';
+import type { ImageSrc } from '@/types';
 
-const MOCK_ITEMS = [
-  { id: '1', name: 'Vegetable Soup', sold: 23, price: 5000, unit: 'Litre', qty: 2, image: soupImg },
-  {
-    id: '2',
-    name: 'A plate of Hot Jollof Rice',
-    sold: 23,
-    price: 5000,
-    unit: 'Pack',
-    qty: 1,
-    image: spicyJollofImg,
-  },
-  {
-    id: '3',
-    name: 'Egusi Soup with Swallow',
-    sold: 23,
-    price: 5000,
-    unit: 'Portion',
-    qty: 2,
-    image: stewImg,
-  },
-];
+function safeImage(url: string | undefined, fallback: ImageSrc): ImageSrc {
+  return url?.startsWith('https://res.cloudinary.com/') ? url : fallback;
+}
 
-const MORE_MEALS = [
-  {
-    id: 'm1',
-    name: 'Fried Rice Special',
-    imageUrl: friedRiceImg,
-    price: 5000,
-    unit: 'Pack',
-    soldCount: 23,
-    popular: true,
-    category: 'Rice',
-  },
-  {
-    id: 'm2',
-    name: 'Fish Platter',
-    imageUrl: meatPlaterImg,
-    price: 6500,
-    unit: 'Plate',
-    soldCount: 23,
-    popular: true,
-    category: 'Protein',
-  },
-  {
-    id: 'm3',
-    name: 'Meat Platter',
-    imageUrl: meatPlaterImg,
-    price: 6500,
-    unit: 'Plate',
-    soldCount: 23,
-    popular: true,
-    category: 'Protein',
-  },
-];
+export default async function BasketPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ kitchen?: string }>;
+}) {
+  // The store handle rides in on ?kitchen= from the meal page's basket
+  // button; the fallback covers direct visits during development.
+  const { kitchen } = await searchParams;
+  const kitchenId = kitchen ?? 'dev-clinton';
+  const data = await getStore(kitchenId);
 
-export default function BasketPage() {
+  const moreMeals =
+    data?.products
+      .filter((p) => p.isAvailable)
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        imageUrl: safeImage(p.images[0]?.url, soupImg),
+        price: Math.round(p.customerPrice),
+        unit: unitLabel(p.unitType),
+        soldCount: 0,
+        category: p.category,
+      })) ?? [];
+
+  const pickupWindow = data
+    ? `${data.store.pickupWindow.from} to ${data.store.pickupWindow.to}`
+    : '';
+
   return (
     <BasketClient
-      initialItems={MOCK_ITEMS}
-      moreMeals={MORE_MEALS}
-      pickupDay="Saturday"
-      pickupWindow="2:00 PM to 6:00 PM"
-      kitchenId="dev-clinton"
+      moreMeals={moreMeals}
+      preparationDays={data?.store.preparationDays ?? 1}
+      pickupWindow={pickupWindow}
+      kitchenId={kitchenId}
+      deliveryFee={data?.store.deliveryFee ?? 0}
     />
   );
 }

@@ -79,10 +79,12 @@ export default async function MealDetailPage({
           <MealPriceCard price={meal.price} unit={meal.unit} name={meal.name} />
           <MealDescriptionCard description={meal.description} />
           <MealDetailClient
+            productId={meal.id}
             basePrice={meal.price}
             unit={meal.unit}
             extras={meal.extras}
             initialQty={initialQty}
+            kitchenId={kitchenId}
           />
           <MealProductInsightCard totalOrders={meal.totalOrders} listedDate={meal.listedDate} />
           <MealFulfilmentCard delivery={meal.delivery} pickup={meal.pickup} />

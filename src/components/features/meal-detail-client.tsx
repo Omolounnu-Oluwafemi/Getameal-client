@@ -2,24 +2,30 @@
 
 import { useState } from 'react';
 
+import { addToCart } from '@/lib/cart';
+import type { Cart } from '@/lib/cart';
 import { MealExtrasCard } from './meal-extras-card';
 import { MealStickyBar } from './meal-sticky-bar';
 import { QuantitySheet } from './quantity-sheet';
 import type { Extra } from '@/types';
 
 interface MealDetailClientProps {
+  productId: string;
   basePrice: number;
   unit: string;
   extras: Extra[];
   /** Quantity carried over from the kitchen page's card controls. */
   initialQty?: number;
+  kitchenId: string;
 }
 
 export function MealDetailClient({
+  productId,
   basePrice,
   unit,
   extras,
   initialQty = 1,
+  kitchenId,
 }: MealDetailClientProps) {
   const [activeExtra, setActiveExtra] = useState<Extra | null>(null);
   // Confirmed add-ons: extra id -> quantity.
@@ -44,15 +50,22 @@ export function MealDetailClient({
     });
   }
 
+  function handleAddToBasket(): Promise<Cart | null> {
+    // The cart API takes one { name, price } entry per add-on unit.
+    const addOns = extras.flatMap((extra) =>
+      Array.from({ length: addedExtras[extra.id] ?? 0 }, () => ({
+        name: extra.name,
+        price: extra.price,
+      })),
+    );
+    return addToCart({ productId, quantity: initialQty, addOns });
+  }
+
   const activeExtraQty = activeExtra ? (addedExtras[activeExtra.id] ?? 0) : 0;
 
   return (
     <>
-      <MealExtrasCard
-        extras={extras}
-        addedQtyById={addedExtras}
-        onExtraSelect={setActiveExtra}
-      />
+      <MealExtrasCard extras={extras} addedQtyById={addedExtras} onExtraSelect={setActiveExtra} />
 
       {activeExtra && (
         <QuantitySheet
@@ -65,7 +78,13 @@ export function MealDetailClient({
         />
       )}
 
-      <MealStickyBar price={displayPrice} unit={unit} qty={initialQty} />
+      <MealStickyBar
+        price={displayPrice}
+        unit={unit}
+        qty={initialQty}
+        kitchenId={kitchenId}
+        onAdd={handleAddToBasket}
+      />
     </>
   );
 }

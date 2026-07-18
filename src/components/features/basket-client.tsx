@@ -1,58 +1,136 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+
+import soupImg from '../../../public/images/kitchen/soup.png';
 
 import { CheckoutSheet } from '@/components/features/checkout-sheet';
 import { KitchenMealCard } from '@/components/features/kitchen-meal-card';
 import { StickyBar } from '@/components/features/sticky-bar';
 import { MinusIcon, PlusIcon, TrashIcon } from '@/components/icons';
-import type { StaticImageData } from 'next/image';
+import { Spinner } from '@/components/ui/spinner';
+import { Toast } from '@/components/ui/toast';
+import { addToCart, getCart, removeFromCart } from '@/lib/cart';
+import type { Cart } from '@/lib/cart';
 import type { KitchenMealItem } from '@/types';
 
-interface CartItem {
+interface BasketItem {
   id: string;
+  productId: string;
   name: string;
-  sold: number;
   price: number;
-  unit: string;
   qty: number;
-  image: StaticImageData;
+  image: string;
+  addOns: { name: string; price: number }[];
 }
 
 interface BasketClientProps {
-  initialItems: CartItem[];
   moreMeals: KitchenMealItem[];
-  pickupDay: string;
+  preparationDays: number;
   pickupWindow: string;
   kitchenId: string;
+  deliveryFee: number;
+}
+
+const fmt = (n: number) => `₦${n.toLocaleString('en-NG')}`;
+
+function mapCart(cart: Cart | null): BasketItem[] {
+  return (cart?.items ?? []).map((item) => ({
+    // The cart keeps one line per product, so productId is the stable row id.
+    id: item.productId,
+    productId: item.productId,
+    name: item.name,
+    price: Math.round(item.customerPrice),
+    qty: item.quantity,
+    image: item.image,
+    addOns: item.addOns.map((a) => ({ name: a.name, price: a.price })),
+  }));
 }
 
 export function BasketClient({
-  initialItems,
   moreMeals,
-  pickupDay,
+  preparationDays,
   pickupWindow,
   kitchenId,
+  deliveryFee,
 }: BasketClientProps) {
-  const [items, setItems] = useState<CartItem[]>(initialItems);
+  // null = still loading from the cart API.
+  const [items, setItems] = useState<BasketItem[] | null>(null);
+  const [pickupDay, setPickupDay] = useState('');
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [busyItemId, setBusyItemId] = useState<string | null>(null);
+  const [errorVisible, setErrorVisible] = useState(false);
 
-  function changeQty(id: string, delta: number) {
-    setItems((prev) =>
-      prev
-        .map((item) => (item.id === id ? { ...item, qty: item.qty + delta } : item))
-        .filter((item) => item.qty > 0),
+  useEffect(() => {
+    let cancelled = false;
+
+    setPickupDay(
+      new Date(Date.now() + preparationDays * 86_400_000).toLocaleDateString('en-NG', {
+        weekday: 'long',
+      }),
     );
+
+    getCart().then((cart) => {
+      if (cancelled) return;
+      setItems(mapCart(cart));
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [preparationDays]);
+
+  async function changeQty(item: BasketItem, delta: number) {
+    if (busyItemId) return;
+    setBusyItemId(item.id);
+
+    const newQty = item.qty + delta;
+    let cart: Cart | null;
+    if (newQty <= 0) {
+      cart = await removeFromCart(item.productId);
+    } else {
+      // No update endpoint yet — remove and re-add with the new quantity so
+      // the result is the same whether the POST increments or replaces.
+      await removeFromCart(item.productId);
+      cart = await addToCart({ productId: item.productId, quantity: newQty, addOns: item.addOns });
+    }
+
+    if (cart) {
+      setItems(mapCart(cart));
+    } else {
+      setErrorVisible(true);
+    }
+    setBusyItemId(null);
   }
 
-  const totalPrice = items.reduce((sum, item) => sum + item.price * item.qty, 0);
-  const totalItems = items.reduce((sum, item) => sum + item.qty, 0);
+  const totalPrice = (items ?? []).reduce(
+    (sum, item) =>
+      sum + item.price * item.qty + item.addOns.reduce((s, a) => s + a.price, 0),
+    0,
+  );
+  const totalItems = (items ?? []).reduce((sum, item) => sum + item.qty, 0);
 
   return (
     <>
-      {checkoutOpen && <CheckoutSheet onClose={() => setCheckoutOpen(false)} />}
+      {/* Blocking overlay while a cart change is in flight */}
+      {busyItemId !== null && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-[2px]"
+          aria-busy="true"
+        >
+          <Spinner />
+        </div>
+      )}
+
+      {checkoutOpen && (
+        <CheckoutSheet
+          onClose={() => setCheckoutOpen(false)}
+          kitchenId={kitchenId}
+          deliveryFee={deliveryFee}
+        />
+      )}
       <div className="min-h-screen bg-white pb-32">
         {/* Header */}
         <div className="sticky top-0 z-30 flex items-center justify-between bg-[#FFFFFFE5] px-5 pt-[max(2rem,calc(env(safe-area-inset-top)+0.5rem))] pb-5 backdrop-blur-[20px]">
@@ -84,11 +162,29 @@ export function BasketClient({
           </div>
 
           {/* Cart items */}
-          <div className="space-y-4">
-            {items.map((item) => (
-              <CartItemRow key={item.id} item={item} onChangeQty={changeQty} />
-            ))}
-          </div>
+          {items === null ? (
+            <div className="flex justify-center py-16">
+              <Spinner />
+            </div>
+          ) : items.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 py-14 text-center">
+              <p className="text-base font-semibold text-black">Your basket is empty</p>
+              <Link href={`/${kitchenId}`} className="text-brand text-sm font-semibold">
+                Browse the kitchen
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {items.map((item) => (
+                <CartItemRow
+                  key={item.id}
+                  item={item}
+                  busy={busyItemId === item.id}
+                  onChangeQty={changeQty}
+                />
+              ))}
+            </div>
+          )}
 
           {/* More from this seller */}
           {moreMeals.length > 0 && (
@@ -125,6 +221,13 @@ export function BasketClient({
             </>
           }
         />
+
+        {errorVisible && (
+          <Toast
+            message="Couldn't update your basket. Please try again."
+            onClose={() => setErrorVisible(false)}
+          />
+        )}
       </div>
     </>
   );
@@ -132,15 +235,19 @@ export function BasketClient({
 
 function CartItemRow({
   item,
+  busy,
   onChangeQty,
 }: {
-  item: CartItem;
-  onChangeQty: (id: string, delta: number) => void;
+  item: BasketItem;
+  busy: boolean;
+  onChangeQty: (item: BasketItem, delta: number) => void;
 }) {
+  const imageSrc = item.image?.startsWith('https://res.cloudinary.com/') ? item.image : soupImg;
+
   return (
     <div className="flex items-center gap-3 py-3">
       <Image
-        src={item.image}
+        src={imageSrc}
         alt={item.name}
         width={107}
         height={98}
@@ -150,17 +257,21 @@ function CartItemRow({
       <div className="min-w-0 flex-1">
         <div className="flex flex-col gap-1 self-start">
           <p className="text-sm leading-tight font-medium text-black">{item.name}</p>
-          <p className="text-sm font-medium text-[#209D01]">{item.sold} Sold</p>
+          {item.addOns.length > 0 && (
+            <p className="text-xs text-[#5C5C5C]">
+              {item.addOns.map((a) => `+ ${a.name} (${fmt(a.price)})`).join(' · ')}
+            </p>
+          )}
         </div>
 
         <div className="flex items-center justify-between gap-1 pt-2">
-          <p className="text-base font-bold text-black">
-            {`₦${item.price.toLocaleString('en-NG')}`}
-            <span className="text-base font-semibold text-black"> / 1 {item.unit}</span>
-          </p>
-          <div className="flex h-9.5 w-21.25 items-center justify-between rounded-[14px] border border-[#EDEDED] bg-white p-2.5 shadow-[0px_4px_15px_0px_#0000000D]">
+          <p className="text-base font-bold text-black">{fmt(item.price)}</p>
+          <div
+            className={`flex h-9.5 w-21.25 items-center justify-between rounded-[14px] border border-[#EDEDED] bg-white p-2.5 shadow-[0px_4px_15px_0px_#0000000D] ${busy ? 'opacity-50' : ''}`}
+          >
             <button
-              onClick={() => onChangeQty(item.id, -1)}
+              onClick={() => onChangeQty(item, -1)}
+              disabled={busy}
               className="flex h-5 w-5 items-center justify-center text-black"
               aria-label="Decrease"
             >
@@ -172,7 +283,8 @@ function CartItemRow({
             </button>
             <span className="min-w-4 text-center text-sm font-bold text-black">{item.qty}</span>
             <button
-              onClick={() => onChangeQty(item.id, 1)}
+              onClick={() => onChangeQty(item, 1)}
+              disabled={busy}
               className="flex h-5 w-5 items-center justify-center text-black"
               aria-label="Increase"
             >
