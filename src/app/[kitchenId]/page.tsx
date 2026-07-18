@@ -128,9 +128,10 @@ export default async function KitchenPage({ params }: { params: Promise<{ kitche
           totalOrders={stats.totalOrders}
           rating={stats.rating}
           reviewCount={stats.reviewCount}
+          kitchenId={kitchenId}
         />
 
-        <KitchenActionButtons kitchenId={kitchenId} />
+        <KitchenActionButtons kitchenId={kitchenId} kitchenName={kitchen.name} />
 
         <KitchenMealGrid
           categories={kitchen.categories}

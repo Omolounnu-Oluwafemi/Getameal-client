@@ -12,9 +12,6 @@ interface MealGalleryHeaderProps {
 
 export function MealGalleryHeader({ images, alt, kitchenId }: MealGalleryHeaderProps) {
   return (
-    // Sticky: scrolls with the page until it reaches the top of the viewport,
-    // then pins there while the detail cards scroll behind it (z-20 + the
-    // opaque image keep them hidden underneath).
     <div className="sticky top-0 z-20">
       <ImageGallery
         images={images}

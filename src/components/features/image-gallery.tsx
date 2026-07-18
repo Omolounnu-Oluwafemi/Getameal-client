@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useRef, useState } from 'react';
 import Image from 'next/image';
 
 import type { ImageSrc } from '@/types';
@@ -13,28 +13,40 @@ interface ImageGalleryProps {
 
 export function ImageGallery({ images, alt, className }: ImageGalleryProps) {
   const [current, setCurrent] = useState(0);
+  const trackRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (images.length <= 1) return;
-    const id = setInterval(() => {
-      setCurrent((p) => (p + 1) % images.length);
-    }, 3000);
-    return () => clearInterval(id);
-  }, [images.length]);
+  function handleScroll() {
+    const el = trackRef.current;
+    if (!el || el.clientWidth === 0) return;
+    setCurrent(Math.round(el.scrollLeft / el.clientWidth));
+  }
 
   return (
-    <div className={className ?? 'relative aspect-4/3 w-full overflow-hidden bg-neutral-200 sm:aspect-video lg:aspect-16/7'}>
-      {images.map((src, i) => (
-        <Image
-          key={i}
-          src={src}
-          alt={`${alt} — photo ${i + 1}`}
-          fill
-          className={`object-cover transition-opacity duration-700 ${i === current ? 'opacity-100' : 'opacity-0'}`}
-          priority={i === 0}
-          sizes="(min-width: 1024px) 60vw, 100vw"
-        />
-      ))}
+    <div
+      className={
+        className ??
+        'relative aspect-4/3 w-full overflow-hidden bg-neutral-200 sm:aspect-video lg:aspect-16/7'
+      }
+    >
+      {/* Swipeable track — one full-width slide per image */}
+      <div
+        ref={trackRef}
+        onScroll={handleScroll}
+        className="flex h-full w-full snap-x snap-mandatory overflow-x-auto scrollbar-none"
+      >
+        {images.map((src, i) => (
+          <div key={i} className="relative h-full w-full shrink-0 snap-center">
+            <Image
+              src={src}
+              alt={`${alt} — photo ${i + 1}`}
+              fill
+              className="object-cover"
+              priority={i === 0}
+              sizes="(min-width: 1024px) 60vw, 100vw"
+            />
+          </div>
+        ))}
+      </div>
 
       {/* Counter pill */}
       {images.length > 1 && (
