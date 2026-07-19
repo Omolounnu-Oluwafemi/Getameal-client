@@ -8,21 +8,27 @@ export default async function CheckoutPage({
 }: {
   searchParams: Promise<{ method?: string; kitchen?: string }>;
 }) {
-  // The store handle rides in on ?kitchen= from the checkout sheet; the
-  // fallback covers direct visits during development.
+  // The store handle rides in on ?kitchen= from the checkout sheet.
   const { method, kitchen } = await searchParams;
   const deliveryMethod = method === 'delivery' ? 'delivery' : 'pickup';
-  const kitchenId = kitchen ?? 'dev-clinton';
+  if (!kitchen) notFound();
+
+  const kitchenId = kitchen;
 
   const data = await getStore(kitchenId);
   if (!data) notFound();
   const { store } = data;
+
+  const fallbackImage = store.profileImage?.startsWith('https://res.cloudinary.com/')
+    ? store.profileImage
+    : '/icon.svg';
 
   return (
     <ConfirmPayClient
       deliveryMethod={deliveryMethod}
       deliveryFee={store.deliveryFee}
       kitchenId={kitchenId}
+      fallbackImage={fallbackImage}
       preparationDays={store.preparationDays}
       readyTime={store.pickupWindow.from}
       kitchen={{

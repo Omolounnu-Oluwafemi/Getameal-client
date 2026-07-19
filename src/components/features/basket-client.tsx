@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
-import soupImg from '../../../public/images/kitchen/soup.png';
 
 import { CheckoutSheet } from '@/components/features/checkout-sheet';
 import { KitchenMealCard } from '@/components/features/kitchen-meal-card';
@@ -32,6 +31,8 @@ interface BasketClientProps {
   pickupWindow: string;
   kitchenId: string;
   deliveryFee: number;
+  /** Shown for items without a photo — the cook's profile image or app icon. */
+  fallbackImage: string;
 }
 
 const fmt = (n: number) => `₦${n.toLocaleString('en-NG')}`;
@@ -55,6 +56,7 @@ export function BasketClient({
   pickupWindow,
   kitchenId,
   deliveryFee,
+  fallbackImage,
 }: BasketClientProps) {
   // null = still loading from the cart API.
   const [items, setItems] = useState<BasketItem[] | null>(null);
@@ -180,6 +182,7 @@ export function BasketClient({
                   key={item.id}
                   item={item}
                   busy={busyItemId === item.id}
+                  fallbackImage={fallbackImage}
                   onChangeQty={changeQty}
                 />
               ))}
@@ -236,13 +239,17 @@ export function BasketClient({
 function CartItemRow({
   item,
   busy,
+  fallbackImage,
   onChangeQty,
 }: {
   item: BasketItem;
   busy: boolean;
+  fallbackImage: string;
   onChangeQty: (item: BasketItem, delta: number) => void;
 }) {
-  const imageSrc = item.image?.startsWith('https://res.cloudinary.com/') ? item.image : soupImg;
+  const imageSrc = item.image?.startsWith('https://res.cloudinary.com/')
+    ? item.image
+    : fallbackImage;
 
   return (
     <div className="flex items-center gap-3 py-3">

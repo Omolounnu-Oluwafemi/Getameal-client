@@ -18,7 +18,10 @@ export default async function LeaveReviewPage({
   const { orderId } = await params;
   const { seller, name, phone } = await searchParams;
 
-  const data = await getStore(seller ?? 'dev-clinton');
+  // The seller handle is carried by the WhatsApp review link.
+  if (!seller) notFound();
+
+  const data = await getStore(seller);
   if (!data) notFound();
 
   return (

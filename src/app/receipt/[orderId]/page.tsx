@@ -23,6 +23,12 @@ function groupAddOns(addOns: { name: string; price: number }[]) {
 }
 
 function toReceiptItems(order: OrderDetails) {
+  // Items without a photo fall back to the cook's profile image, then the
+  // app icon — never an unrelated dish photo.
+  const fallback = order.cook.profileImage?.startsWith('https://res.cloudinary.com/')
+    ? order.cook.profileImage
+    : '/icon.svg';
+
   return order.items.map((item) => {
     const product = typeof item.productId === 'object' ? item.productId : null;
     const imageUrl = product?.images?.[0]?.url;
@@ -32,7 +38,7 @@ function toReceiptItems(order: OrderDetails) {
       qty: item.quantity,
       unit: '',
       price: Math.round(item.price),
-      image: imageUrl?.startsWith('https://res.cloudinary.com/') ? imageUrl : jollofImg,
+      image: imageUrl?.startsWith('https://res.cloudinary.com/') ? imageUrl : fallback,
       addOns: groupAddOns(item.addOns),
     };
   });

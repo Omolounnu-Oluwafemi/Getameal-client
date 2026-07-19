@@ -1,5 +1,3 @@
-import Link from 'next/link';
-
 import { buttonVariants } from '@/components/ui/button';
 
 export default function NotFound() {
@@ -9,9 +7,9 @@ export default function NotFound() {
       <p className="max-w-md text-neutral-500">
         The page you&apos;re looking for doesn&apos;t exist or may have moved.
       </p>
-      <Link href="/" className={buttonVariants({ size: 'lg' })}>
-        Back home
-      </Link>
+      <a href="https://getameal.app/" className={buttonVariants({ size: 'lg' })}>
+        Go to GetaMeal
+      </a>
     </main>
   );
 }

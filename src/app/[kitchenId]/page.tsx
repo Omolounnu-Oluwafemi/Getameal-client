@@ -3,7 +3,6 @@ import { notFound } from 'next/navigation';
 
 import avatarImg from '../../../public/images/kitchen/avatar.png';
 import bannerImg from '../../../public/images/kitchen/banner.jpg';
-import soupImg from '../../../public/images/kitchen/soup.png';
 
 import { KitchenActionButtons } from '@/components/features/kitchen-action-buttons';
 import { KitchenMealGrid } from '@/components/features/kitchen-meal-grid';
@@ -19,6 +18,10 @@ function safeImage(url: string | undefined, fallback: ImageSrc): ImageSrc {
 }
 
 function toKitchen(handle: string, { store, products }: StoreResponse): Kitchen {
+  // Products without a photo fall back to the cook's profile image, then the
+  // app icon — never an unrelated dish photo.
+  const productFallback = safeImage(store.profileImage, '/icon.svg');
+
   return {
     id: handle,
     name: store.storeName,
@@ -41,7 +44,7 @@ function toKitchen(handle: string, { store, products }: StoreResponse): Kitchen 
       .map((p) => ({
         id: p.id,
         name: p.name,
-        imageUrl: safeImage(p.images[0]?.url, soupImg),
+        imageUrl: safeImage(p.images[0]?.url, productFallback),
         price: Math.round(p.customerPrice),
         unit: unitLabel(p.unitType),
         soldCount: 0,

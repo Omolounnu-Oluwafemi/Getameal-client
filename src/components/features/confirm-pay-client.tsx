@@ -4,8 +4,6 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
-import soupImg from '../../../public/images/kitchen/soup.png';
-
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { Toast } from '@/components/ui/toast';
@@ -23,6 +21,8 @@ interface ConfirmPayClientProps {
   deliveryMethod: 'pickup' | 'delivery';
   deliveryFee: number;
   kitchenId: string;
+  /** Shown for items without a photo — the cook's profile image or app icon. */
+  fallbackImage: string;
   preparationDays: number;
   /** "HH:mm" — start of the store's pickup window. */
   readyTime: string;
@@ -67,6 +67,7 @@ export function ConfirmPayClient({
   deliveryMethod,
   deliveryFee,
   kitchenId,
+  fallbackImage,
   preparationDays,
   readyTime,
   kitchen,
@@ -238,7 +239,7 @@ export function ConfirmPayClient({
                       src={
                         item.image?.startsWith('https://res.cloudinary.com/')
                           ? item.image
-                          : soupImg
+                          : fallbackImage
                       }
                       alt={item.name}
                       fill

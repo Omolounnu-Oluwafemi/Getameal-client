@@ -2,7 +2,6 @@ import Image from 'next/image';
 import { notFound } from 'next/navigation';
 
 import bannerImg from '../../../../public/images/kitchen/banner.jpg';
-import spicyJollofImg from '../../../../public/images/kitchen/spicy-smoky-jollof.png';
 
 import { MealDescriptionCard } from '@/components/features/meal-description-card';
 import { MealDetailClient } from '@/components/features/meal-detail-client';
@@ -27,18 +26,25 @@ export default async function MealDetailPage({
   const { id } = await params;
   const { kitchen, qty } = await searchParams;
   const initialQty = Math.max(1, Number.parseInt(qty ?? '1', 10) || 1);
-  const kitchenId = kitchen ?? 'dev-clinton';
+  // The kitchen handle rides in on ?kitchen= from the kitchen page.
+  if (!kitchen) notFound();
+
+  const kitchenId = kitchen;
   const result = await getProduct(kitchenId, id);
   if (!result) notFound();
 
   const { store, product } = result;
 
+  // Products without a photo fall back to the cook's profile image, then the
+  // app icon — never an unrelated dish photo.
+  const productFallback = safeImage(store.profileImage, '/icon.svg');
+
   const meal: MealDetail = {
     id: product.id,
     name: product.name,
     images: product.images.length
-      ? product.images.map((img) => safeImage(img.url, spicyJollofImg))
-      : [spicyJollofImg],
+      ? product.images.map((img) => safeImage(img.url, productFallback))
+      : [productFallback],
     price: Math.round(product.customerPrice),
     unit: unitLabel(product.unitType),
     description: product.whatsIncluded,

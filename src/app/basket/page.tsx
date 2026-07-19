@@ -1,4 +1,5 @@
-import soupImg from '../../../public/images/kitchen/soup.png';
+
+import { notFound } from 'next/navigation';
 
 import { BasketClient } from '@/components/features/basket-client';
 import { getStore, unitLabel } from '@/lib/api';
@@ -13,11 +14,17 @@ export default async function BasketPage({
 }: {
   searchParams: Promise<{ kitchen?: string }>;
 }) {
-  // The store handle rides in on ?kitchen= from the meal page's basket
-  // button; the fallback covers direct visits during development.
+  // The store handle rides in on ?kitchen= from the meal page's basket button.
   const { kitchen } = await searchParams;
-  const kitchenId = kitchen ?? 'dev-clinton';
+  if (!kitchen) notFound();
+
+  const kitchenId = kitchen;
   const data = await getStore(kitchenId);
+
+  const profileImage = data?.store.profileImage;
+  const productFallback = profileImage?.startsWith('https://res.cloudinary.com/')
+    ? profileImage
+    : '/icon.svg';
 
   const moreMeals =
     data?.products
@@ -25,7 +32,7 @@ export default async function BasketPage({
       .map((p) => ({
         id: p.id,
         name: p.name,
-        imageUrl: safeImage(p.images[0]?.url, soupImg),
+        imageUrl: safeImage(p.images[0]?.url, productFallback),
         price: Math.round(p.customerPrice),
         unit: unitLabel(p.unitType),
         soldCount: 0,
@@ -43,6 +50,7 @@ export default async function BasketPage({
       pickupWindow={pickupWindow}
       kitchenId={kitchenId}
       deliveryFee={data?.store.deliveryFee ?? 0}
+      fallbackImage={productFallback}
     />
   );
 }

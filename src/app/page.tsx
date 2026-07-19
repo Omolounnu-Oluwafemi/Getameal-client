@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 
-// The kitchen page is the entry point — redirect to the demo kitchen.
-// In production each cook shares their own /:kitchenId URL.
+// The app has no homepage — each cook shares their own /:kitchenId link.
+// Direct visits go to the GetaMeal site.
 export default function HomePage() {
-  redirect('/dev-clinton');
+  redirect('https://getameal.app/');
 }
