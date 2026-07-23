@@ -24,22 +24,59 @@ export function CheckoutSheet({ onClose, kitchenId, deliveryFee = 2300 }: Checko
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const sheetRef = useRef<HTMLDivElement>(null);
 
-  // The sheet is 90vh tall, but the on-screen keyboard shrinks the *visible*
-  // viewport without shrinking the layout. Clamp the sheet to the visible
-  // height so the pinned CTA sits above the keyboard and the body scrolls
-  // instead of being covered.
+  // Mobile browsers compute `bottom: 0` against their full layout viewport,
+  // not the actually-visible area — so once the keyboard (or autofill bar)
+  // opens and shrinks the *visible* viewport, a sheet pinned via bottom:0
+  // can end up positioned behind the keyboard entirely, off-screen. Drive
+  // both position and height from visualViewport directly instead, so the
+  // sheet always fits exactly within whatever's really visible right now.
   useEffect(() => {
     const vv = window.visualViewport;
     const sheet = sheetRef.current;
     if (!vv || !sheet) return;
 
     const update = () => {
-      sheet.style.maxHeight = `${vv.height}px`;
+      const height = Math.min(vv.height, window.innerHeight * 0.9);
+      sheet.style.height = `${height}px`;
+      sheet.style.top = `${vv.offsetTop + vv.height - height}px`;
     };
 
     update();
     vv.addEventListener('resize', update);
-    return () => vv.removeEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+    };
+  }, []);
+
+  // Freeze the page behind this sheet while it's open. Without this, the
+  // moment an input inside the (fixed) sheet is focused, mobile browsers try
+  // to auto-scroll the *underlying page* to bring it into view — even
+  // though the sheet is pinned above it — which is what shows up as the
+  // background page visibly "popping"/jumping when you tap a field.
+  useEffect(() => {
+    const scrollY = window.scrollY;
+    const body = document.body;
+    const prev = {
+      position: body.style.position,
+      top: body.style.top,
+      left: body.style.left,
+      right: body.style.right,
+    };
+
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.left = '0';
+    body.style.right = '0';
+
+    return () => {
+      body.style.position = prev.position;
+      body.style.top = prev.top;
+      body.style.left = prev.left;
+      body.style.right = prev.right;
+      window.scrollTo(0, scrollY);
+    };
   }, []);
 
   function handleContinue() {
