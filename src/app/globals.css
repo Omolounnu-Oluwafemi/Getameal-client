@@ -17,6 +17,14 @@
   --color-brand-dark: var(--brand-dark);
 }
 
+html {
+  /* Stops the native "rubber-band" bounce past the top/bottom of the page —
+     without this, flicking past the content reveals blank background and
+     briefly shows the browser's own toolbar animating, which reads as the
+     page "scrolling by itself" or having extra empty space at the bottom. */
+  overscroll-behavior-y: none;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
