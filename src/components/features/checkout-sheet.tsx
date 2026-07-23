@@ -169,7 +169,7 @@ export function CheckoutSheet({ onClose, kitchenId, deliveryFee = 2300 }: Checko
             <div>
               <label className="mb-2 block text-sm font-medium text-black">WhatsApp number</label>
               <div className="flex h-12.5 items-center overflow-hidden rounded-full border border-[#E1E1E1] bg-white">
-                <span className="flex h-full shrink-0 items-center border-r border-[#E1E1E1] bg-[#F7F7F7] px-4 text-sm text-neutral-500">
+                <span className="flex h-full shrink-0 items-center border-r border-[#E1E1E1] bg-[#F7F7F7] px-4 text-base text-neutral-500">
                   +234
                 </span>
                 <Input

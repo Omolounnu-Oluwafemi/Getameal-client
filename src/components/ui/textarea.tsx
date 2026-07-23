@@ -50,7 +50,9 @@ export function Textarea({ className, onChange, ...props }: TextareaProps) {
         ref={textareaRef}
         rows={1}
         className={cn(
-          'focus:border-brand min-h-21.75 w-full resize-none overflow-hidden rounded-[20px] border border-[#E1E1E1] bg-white px-5 py-2.5 pb-6 text-sm text-neutral-900 transition-colors outline-none placeholder:text-neutral-400',
+          // text-base (16px), not text-sm: mobile browsers auto-zoom the page
+          // when a focused input's font is smaller than 16px.
+          'focus:border-brand min-h-21.75 w-full resize-none overflow-hidden rounded-[20px] border border-[#E1E1E1] bg-white px-5 py-2.5 pb-6 text-base text-neutral-900 transition-colors outline-none placeholder:text-neutral-400',
           className,
         )}
         onChange={handleChange}

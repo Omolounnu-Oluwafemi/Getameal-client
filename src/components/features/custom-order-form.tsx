@@ -280,7 +280,7 @@ export function CustomOrderForm({
         <div>
           <label className={LABEL}>WhatsApp number</label>
           <div className="focus-within:border-brand flex h-13.75 overflow-hidden rounded-full border border-[#E1E1E1] bg-white transition-colors">
-            <div className="flex shrink-0 items-center border-r border-[#E1E1E1] bg-[#F7F7F7] px-5 text-sm font-semibold text-neutral-700">
+            <div className="flex shrink-0 items-center border-r border-[#E1E1E1] bg-[#F7F7F7] px-5 text-base font-semibold text-neutral-700">
               +234
             </div>
             <input
@@ -288,7 +288,9 @@ export function CustomOrderForm({
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="Enter phone number"
-              className="min-w-0 flex-1 bg-transparent px-5 text-sm text-neutral-900 outline-none placeholder:text-neutral-400"
+              // text-base (16px), not text-sm: mobile browsers auto-zoom the
+              // page when a focused input's font is smaller than 16px.
+              className="min-w-0 flex-1 bg-transparent px-5 text-base text-neutral-900 outline-none placeholder:text-neutral-400"
             />
           </div>
           <p className="mt-1.5 text-xs text-[#989898]">
