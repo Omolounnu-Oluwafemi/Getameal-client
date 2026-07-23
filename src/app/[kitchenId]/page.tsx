@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import avatarImg from '../../../public/images/kitchen/avatar.png';
 import bannerImg from '../../../public/images/kitchen/banner.jpg';
 
+import { FloatingBasketButton } from '@/components/features/floating-basket-button';
 import { KitchenActionButtons } from '@/components/features/kitchen-action-buttons';
 import { KitchenMealGrid } from '@/components/features/kitchen-meal-grid';
 import { KitchenStatsCarousel } from '@/components/features/kitchen-stats-carousel';
@@ -143,6 +144,8 @@ export default async function KitchenPage({ params }: { params: Promise<{ kitche
           kitchenId={kitchenId}
         />
       </div>
+
+      <FloatingBasketButton kitchenId={kitchenId} />
     </div>
   );
 }

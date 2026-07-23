@@ -29,19 +29,17 @@ function toReceiptItems(order: OrderDetails) {
     ? order.cook.profileImage
     : '/icon.svg';
 
-  return order.items.map((item) => {
-    const product = typeof item.productId === 'object' ? item.productId : null;
-    const imageUrl = product?.images?.[0]?.url;
-    return {
-      id: item._id,
-      name: item.name,
-      qty: item.quantity,
-      unit: '',
-      price: Math.round(item.price),
-      image: imageUrl?.startsWith('https://res.cloudinary.com/') ? imageUrl : fallback,
-      addOns: groupAddOns(item.addOns),
-    };
-  });
+  return order.items.map((item) => ({
+    id: item.id,
+    name: item.name,
+    qty: item.quantity,
+    unit: '',
+    price: Math.round(item.price),
+    image: item.productImage?.startsWith('https://res.cloudinary.com/')
+      ? item.productImage
+      : fallback,
+    addOns: groupAddOns(item.addOns),
+  }));
 }
 
 // The WhatsApp receipt link carries the customer's phone as a query param;
@@ -66,14 +64,16 @@ export default async function ReceiptPage({
       <ReceiptClient
         status={order.status === 'cancelled' ? 'cancelled' : 'completed'}
         deliveryMethod={order.deliveryType}
-        customerName=""
+        customerName={order.customer?.fullName ?? ''}
         date={new Date(order.createdAt).toLocaleDateString('en-NG', {
           day: '2-digit',
           month: 'short',
           year: 'numeric',
         })}
         total={Math.round(order.totalAmount)}
-        deliveryAddress="You’ll get delivery updates on WhatsApp."
+        deliveryAddress={
+          order.deliveryAddress || 'You’ll get delivery updates on WhatsApp.'
+        }
         pickupLocation={order.cook.pickupLandmark}
         pickupAddress={order.cook.kitchenAddress}
         items={toReceiptItems(order)}

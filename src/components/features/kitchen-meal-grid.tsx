@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import { getCart } from '@/lib/cart';
 import { cn } from '@/lib/utils';
 import { KitchenMealCard } from './kitchen-meal-card';
 import type { KitchenCategory, KitchenMealItem } from '@/types';
@@ -20,6 +21,22 @@ export function KitchenMealGrid({
   kitchenId,
 }: KitchenMealGridProps) {
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
+  // productId -> quantity already in the basket, so cards show the count
+  // instead of "+" for items the customer already has.
+  const [cartQtyById, setCartQtyById] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    getCart().then((cart) => {
+      if (cancelled || !cart) return;
+      const next: Record<string, number> = {};
+      for (const item of cart.items) next[item.productId] = item.quantity;
+      setCartQtyById(next);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const filtered =
     activeCategoryId !== null ? meals.filter((m) => m.category === activeCategoryId) : meals;
@@ -63,6 +80,7 @@ export function KitchenMealGrid({
             meal={meal}
             isKitchenOpen={isKitchenOpen}
             kitchenId={kitchenId}
+            cartQty={cartQtyById[meal.id] ?? 0}
           />
         ))}
       </div>

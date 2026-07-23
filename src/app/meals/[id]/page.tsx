@@ -1,8 +1,10 @@
 import Image from 'next/image';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import bannerImg from '../../../../public/images/kitchen/banner.jpg';
 
+import { CloseIcon, ShareIcon } from '@/components/icons';
 import { MealDescriptionCard } from '@/components/features/meal-description-card';
 import { MealDetailClient } from '@/components/features/meal-detail-client';
 import { MealFulfilmentCard } from '@/components/features/meal-fulfilment-card';
@@ -63,9 +65,15 @@ export default async function MealDetailPage({
   const kitchenBanner = safeImage(store.coverImage, bannerImg);
 
   return (
-    <div className="min-h-screen bg-neutral-900">
-      {/* Kitchen banner — the "peek" visible above the meal sheet */}
-      <div className="relative h-40 w-full overflow-hidden">
+    // `fixed inset-0` pulls the whole page out of document flow — it can
+    // never make <body> scrollable. Inside it, the banner is a static
+    // backdrop that never moves, and the sheet is pinned in place with its
+    // OWN internal scroll: the image, price, description, extras, etc. all
+    // scroll together as one unit, the image included — nothing pins or
+    // stays behind while the rest moves.
+    <div className="fixed inset-0 overflow-hidden bg-neutral-900">
+      {/* Kitchen banner — static backdrop, never scrolls */}
+      <div className="absolute inset-x-0 top-0 h-40 w-full overflow-hidden">
         <Image
           src={kitchenBanner}
           alt="Kitchen banner"
@@ -77,9 +85,26 @@ export default async function MealDetailPage({
         <div className="absolute inset-0 bg-[#130c0cbd]" />
       </div>
 
-      {/* Meal sheet — slides over the banner */}
-      <div className="relative -mt-16 rounded-t-[20px] bg-white">
-        <MealGalleryHeader images={meal.images} alt={meal.name} kitchenId={meal.kitchenId} />
+      {/* Close / share — fixed to the viewport, sitting over the gallery
+          photo (the sheet starts at top-24; +16px lands on the image) and
+          staying put there as the sheet's content scrolls underneath. */}
+      <Link
+        href={`/${kitchenId}`}
+        className="fixed top-28 left-4 z-40 flex h-10 w-10 items-center justify-center rounded-full bg-white p-2.5 shadow-[0px_4px_20px_0px_#00000040]"
+        aria-label="Back to kitchen"
+      >
+        <CloseIcon />
+      </Link>
+      <button
+        className="fixed top-28 right-4 z-40 flex h-10 w-10 items-center justify-center rounded-full bg-white p-2.5 shadow-[0px_4px_20px_0px_#00000040]"
+        aria-label="Share"
+      >
+        <ShareIcon />
+      </button>
+
+      {/* Meal sheet — fixed in place; only its content scrolls */}
+      <div className="absolute inset-x-0 top-24 bottom-0 overflow-y-auto rounded-t-[20px] bg-white">
+        <MealGalleryHeader images={meal.images} alt={meal.name} />
 
         <div className="mx-auto max-w-2xl space-y-2.5 px-4 pt-5 pb-34 lg:max-w-3xl">
           <MealPriceCard price={meal.price} unit={meal.unit} name={meal.name} />

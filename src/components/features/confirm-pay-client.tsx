@@ -24,6 +24,8 @@ interface ConfirmPayClientProps {
   /** Shown for items without a photo — the cook's profile image or app icon. */
   fallbackImage: string;
   preparationDays: number;
+  /** Weekday name the order will be ready — computed server-side. */
+  readyDay: string;
   /** "HH:mm" — start of the store's pickup window. */
   readyTime: string;
   kitchen: KitchenInfo;
@@ -69,31 +71,26 @@ export function ConfirmPayClient({
   kitchenId,
   fallbackImage,
   preparationDays,
+  readyDay,
   readyTime,
   kitchen,
 }: ConfirmPayClientProps) {
   // null = cart still loading.
   const [items, setItems] = useState<OrderLine[] | null>(null);
-  const [details, setDetails] = useState<CheckoutDetails | null>(null);
-  const [readyDay, setReadyDay] = useState('');
+  const [details] = useState<CheckoutDetails | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const raw = sessionStorage.getItem('checkout_details');
+      return raw ? (JSON.parse(raw) as CheckoutDetails) : null;
+    } catch {
+      return null;
+    }
+  });
   const [paying, setPaying] = useState(false);
   const [errorVisible, setErrorVisible] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-
-    try {
-      const raw = sessionStorage.getItem('checkout_details');
-      if (raw) setDetails(JSON.parse(raw) as CheckoutDetails);
-    } catch {
-      // corrupt storage — fall back to defaults
-    }
-
-    setReadyDay(
-      new Date(Date.now() + preparationDays * 86_400_000).toLocaleDateString('en-NG', {
-        weekday: 'long',
-      }),
-    );
 
     getCart().then((cart) => {
       if (cancelled) return;
@@ -113,7 +110,7 @@ export function ConfirmPayClient({
     return () => {
       cancelled = true;
     };
-  }, [preparationDays]);
+  }, []);
 
   const itemsTotal = (items ?? []).reduce(
     (sum, item) => sum + item.price * item.qty + item.addOns.reduce((s, a) => s + a.price, 0),
@@ -136,8 +133,7 @@ export function ConfirmPayClient({
       customerPhone: details?.phone ? `0${details.phone.replace(/^0+/, '')}` : '',
       customerNote: details?.note || undefined,
       deliveryType: deliveryMethod,
-      deliveryAddress:
-        deliveryMethod === 'delivery' ? details?.address || undefined : undefined,
+      deliveryAddress: deliveryMethod === 'delivery' ? details?.address || undefined : undefined,
       readyDate: ready.toISOString(),
     });
 
@@ -297,9 +293,7 @@ export function ConfirmPayClient({
               <span className="text-sm font-bold text-black">{fmt(totalToPay)}</span>
             </div>
           </div>
-          <p className="mt-3 text-xs text-neutral-500">
-            A small service fee is added at payment.
-          </p>
+          <p className="mt-3 text-xs text-neutral-500">A small service fee is added at payment.</p>
         </div>
       </div>
 

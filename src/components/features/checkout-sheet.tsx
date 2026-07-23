@@ -136,11 +136,11 @@ export function CheckoutSheet({ onClose, kitchenId, deliveryFee = 2300 }: Checko
                   +234
                 </span>
                 <Input
-                  type="number"
+                  type="tel"
                   placeholder="Enter number"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="h-full flex-1 [appearance:textfield] rounded-none border-0 px-4 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  className="h-full flex-1 rounded-none border-0 px-4"
                 />
               </div>
               <p className="mt-1.5 text-xs text-neutral-500">

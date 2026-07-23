@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import { addToCart } from '@/lib/cart';
 import type { Cart } from '@/lib/cart';
+import { FloatingBasketButton } from './floating-basket-button';
 import { MealExtrasCard } from './meal-extras-card';
 import { MealStickyBar } from './meal-sticky-bar';
 import { QuantitySheet } from './quantity-sheet';
@@ -30,6 +31,8 @@ export function MealDetailClient({
   const [activeExtra, setActiveExtra] = useState<Extra | null>(null);
   // Confirmed add-ons: extra id -> quantity.
   const [addedExtras, setAddedExtras] = useState<Record<string, number>>({});
+  // Bumped after a successful add so the floating basket refetches the cart.
+  const [basketRefreshKey, setBasketRefreshKey] = useState(0);
 
   const extrasTotal = extras.reduce(
     (sum, extra) => sum + extra.price * (addedExtras[extra.id] ?? 0),
@@ -82,9 +85,10 @@ export function MealDetailClient({
         price={displayPrice}
         unit={unit}
         qty={initialQty}
-        kitchenId={kitchenId}
         onAdd={handleAddToBasket}
+        onAdded={() => setBasketRefreshKey((k) => k + 1)}
       />
+      <FloatingBasketButton kitchenId={kitchenId} refreshKey={basketRefreshKey} />
     </>
   );
 }

@@ -113,6 +113,9 @@ export function BasketClient({
     0,
   );
   const totalItems = (items ?? []).reduce((sum, item) => sum + item.qty, 0);
+  // Reused for the "More from this seller" cards, so they show the count
+  // already in the basket instead of "+".
+  const cartQtyById = Object.fromEntries((items ?? []).map((item) => [item.productId, item.qty]));
 
   return (
     <>
@@ -196,7 +199,12 @@ export function BasketClient({
               <div className="-mx-5 flex scrollbar-none gap-3 overflow-x-auto px-5 pb-2">
                 {moreMeals.map((meal) => (
                   <div key={meal.id} className="w-47.75 shrink-0">
-                    <KitchenMealCard meal={meal} isKitchenOpen kitchenId={kitchenId} />
+                    <KitchenMealCard
+                      meal={meal}
+                      isKitchenOpen
+                      kitchenId={kitchenId}
+                      cartQty={cartQtyById[meal.id] ?? 0}
+                    />
                   </div>
                 ))}
               </div>

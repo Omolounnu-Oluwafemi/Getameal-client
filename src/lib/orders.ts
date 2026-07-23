@@ -103,25 +103,37 @@ export async function createFoodRequest(input: FoodRequestInput): Promise<FoodRe
 // Shape of GET /api/customers/orders/:id?phone=...
 export interface OrderDetails {
   id: string;
+  customer?: {
+    id: string;
+    fullName: string;
+    phone: string;
+    email: string | null;
+    note?: string | null;
+  };
   items: {
-    productId: { _id: string; name: string; images?: { url: string }[] } | string;
+    id: string;
+    productId: string;
     name: string;
     quantity: number;
     price: number;
-    addOns: { name: string; price: number; _id: string }[];
+    addOns: { name: string; price: number }[];
     subtotal: number;
-    _id: string;
+    productImage: string | null;
   }[];
+  customOrderTitle?: string | null;
+  customOrderDescription?: string | null;
   totalAmount: number;
   status: string;
   paymentStatus: string;
   deliveryType: 'pickup' | 'delivery';
+  deliveryAddress?: string | null;
   readyDate: string;
   readyTime: string;
   pickupWindow: { from: string; to: string };
   deliveryFee: number;
   createdAt: string;
   customerNote?: string;
+  sellerNote?: string | null;
   cook: {
     id: string;
     fullName: string;
@@ -134,6 +146,8 @@ export interface OrderDetails {
     kitchenAddress: string;
     pickupLandmark: string;
     pickupWindow: { from: string; to: string };
+    rating?: number;
+    reviewsCount?: number;
   };
 }
 

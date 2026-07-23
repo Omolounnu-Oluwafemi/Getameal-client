@@ -177,11 +177,6 @@ export function CustomOrderCheckoutClient({
         </div>
       </div>
 
-      <p className="px-5 pt-4 text-xs leading-relaxed text-[#5C5C5C]">
-        Review your request details and send it to the seller. They&apos;ll confirm availability
-        and price on WhatsApp.
-      </p>
-
       {/* Fixed submit button */}
       <div className="fixed inset-x-0 bottom-0 z-30 bg-white px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         <Button
