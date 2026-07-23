@@ -8,9 +8,7 @@ interface QuantitySheetProps {
   onClose: () => void;
   onConfirm: (qty: number) => void;
   onQtyChange?: (qty: number) => void;
-  /** Starting quantity — pass the current qty when editing an added extra. */
   initialQty?: number;
-  /** Lowest selectable quantity; 0 lets the user remove an added extra. */
   minQty?: number;
 }
 
@@ -51,7 +49,7 @@ export function QuantitySheet({
         role="dialog"
         aria-modal="true"
         aria-label="Select Quantity"
-        className="fixed inset-x-0 bottom-[-20] z-50 flex h-112 flex-col gap-6 rounded-t-3xl border border-[#EDEDED] bg-white pt-1.75 pr-4 pb-13 pl-4 shadow-[0px_6px_20px_0px_#0000000D]"
+        className="fixed inset-x-0 bottom-0 z-50 flex h-112 flex-col gap-6 rounded-t-3xl border border-[#EDEDED] bg-white pt-1.75 pr-4 pb-13 pl-4 shadow-[0px_6px_20px_0px_#0000000D]"
       >
         {/* Drag handle */}
         <div className="flex justify-center">
