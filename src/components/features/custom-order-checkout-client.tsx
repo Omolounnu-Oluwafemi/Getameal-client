@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -22,7 +22,6 @@ interface CustomOrderCheckoutClientProps {
   cookId: string;
 }
 
-/** Written by the custom order form; submitted from this preview page. */
 interface StoredRequest {
   foodRequest: string;
   notes: string;
@@ -34,25 +33,46 @@ interface StoredRequest {
   address: string;
 }
 
+function subscribe() {
+  return () => {};
+}
+
+let cachedRaw: string | null | undefined;
+let cachedRequest: StoredRequest | null = null;
+
+function getSnapshot(): StoredRequest | null {
+  let raw: string | null;
+  try {
+    raw = sessionStorage.getItem('custom_order_request');
+  } catch {
+    raw = null;
+  }
+
+  if (raw !== cachedRaw) {
+    cachedRaw = raw;
+    try {
+      cachedRequest = raw ? (JSON.parse(raw) as StoredRequest) : null;
+    } catch {
+      cachedRequest = null;
+    }
+  }
+
+  return cachedRequest;
+}
+
+function getServerSnapshot(): StoredRequest | null {
+  return null;
+}
+
 export function CustomOrderCheckoutClient({
   kitchen,
   kitchenId,
   cookId,
 }: CustomOrderCheckoutClientProps) {
   const router = useRouter();
-  // undefined = still reading storage; null = nothing stored (direct visit).
-  const [request, setRequest] = useState<StoredRequest | null | undefined>(undefined);
+  const request = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const [submitting, setSubmitting] = useState(false);
-  const [errorVisible, setErrorVisible] = useState(false);
-
-  useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem('custom_order_request');
-      setRequest(raw ? (JSON.parse(raw) as StoredRequest) : null);
-    } catch {
-      setRequest(null);
-    }
-  }, []);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   async function handleSubmit() {
     if (submitting || !request) return;
@@ -69,7 +89,7 @@ export function CustomOrderCheckoutClient({
       foodRequest: request.foodRequest,
     });
 
-    if (result) {
+    if ('order' in result) {
       // Let the shared order-confirmed page look the order up.
       sessionStorage.setItem(
         'checkout_details',
@@ -82,20 +102,12 @@ export function CustomOrderCheckoutClient({
         }),
       );
       sessionStorage.removeItem('custom_order_request');
-      router.push(`/order-confirmed?method=${request.deliveryType}&orderId=${result.id}`);
+      router.push(`/order-confirmed?method=${request.deliveryType}&orderId=${result.order.id}`);
       return;
     }
 
     setSubmitting(false);
-    setErrorVisible(true);
-  }
-
-  if (request === undefined) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-white">
-        <Spinner />
-      </div>
-    );
+    setErrorMessage(result.error);
   }
 
   if (request === null) {
@@ -193,12 +205,7 @@ export function CustomOrderCheckoutClient({
         </Button>
       </div>
 
-      {errorVisible && (
-        <Toast
-          message="Couldn't send your request. Please try again."
-          onClose={() => setErrorVisible(false)}
-        />
-      )}
+      {errorMessage && <Toast message={errorMessage} onClose={() => setErrorMessage(null)} />}
     </div>
   );
 }

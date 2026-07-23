@@ -76,9 +76,19 @@ export interface FoodRequestOrder {
   paymentStatus: string;
 }
 
-/** Send a custom order request to the cook. Returns null on failure. */
-export async function createFoodRequest(input: FoodRequestInput): Promise<FoodRequestOrder | null> {
+export type CreateFoodRequestResult = { order: FoodRequestOrder } | { error: string };
+
+/**
+ * Send a custom order request to the cook. On failure, `error` carries the
+ * backend's actual message (falling back to a generic one only if the
+ * response has none), so the real reason is visible instead of a guess.
+ */
+export async function createFoodRequest(
+  input: FoodRequestInput,
+): Promise<CreateFoodRequestResult> {
   console.log('Food request payload:', JSON.stringify(input, null, 2));
+
+  const fallback = 'Couldn’t send your request. Please try again.';
 
   try {
     const res = await fetch('/api/custom-orders', {
@@ -87,16 +97,19 @@ export async function createFoodRequest(input: FoodRequestInput): Promise<FoodRe
       body: JSON.stringify(input),
     });
 
-    if (!res.ok) {
-      console.error('Food request failed:', res.status, await res.text().catch(() => ''));
-      return null;
+    const data = (await res.json().catch(() => null)) as
+      | { success: boolean; message?: string; order?: FoodRequestOrder }
+      | null;
+
+    if (res.ok && data?.success && data.order) {
+      return { order: data.order };
     }
 
-    const data = (await res.json()) as { success: boolean; order?: FoodRequestOrder };
-    return data.success && data.order ? data.order : null;
+    console.error('Food request failed:', res.status, data);
+    return { error: data?.message || fallback };
   } catch (error) {
     console.error('Failed to send food request:', error);
-    return null;
+    return { error: 'Couldn’t reach the server. Please check your connection and try again.' };
   }
 }
 

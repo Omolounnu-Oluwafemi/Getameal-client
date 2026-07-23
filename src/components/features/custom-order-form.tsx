@@ -355,7 +355,7 @@ export function CustomOrderForm({
             </button>
 
             {deliveryDropdownOpen && (
-              <div className="absolute top-full right-0 z-10 mt-1 w-[90%] overflow-hidden rounded-2xl border border-[#EDEDED] bg-white shadow-[0px_4px_20px_0px_#0000001A]">
+              <div className="absolute inset-x-0 bottom-full z-20 mb-2 overflow-hidden rounded-2xl border border-[#EDEDED] bg-white shadow-[0px_4px_20px_0px_#0000001A]">
                 <button
                   onClick={() => {
                     setDeliveryType('pickup');
