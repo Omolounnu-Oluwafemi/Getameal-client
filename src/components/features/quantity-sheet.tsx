@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface QuantitySheetProps {
   unit: string;
@@ -12,6 +12,9 @@ interface QuantitySheetProps {
   minQty?: number;
 }
 
+// h-112 in px — kept in sync with the sheet's fixed height below.
+const SHEET_HEIGHT = 448;
+
 export function QuantitySheet({
   unit,
   price,
@@ -22,6 +25,26 @@ export function QuantitySheet({
   minQty = 1,
 }: QuantitySheetProps) {
   const [qty, setQty] = useState(initialQty);
+  // Mobile browsers compute `bottom: 0` against their full layout viewport,
+  // not the actually-visible area — leaving a gap under fixed elements
+  // whenever the address bar / bottom toolbar is shown. Position the sheet
+  // from `top` instead, tracking the real visible viewport directly.
+  const [top, setTop] = useState<number | null>(null);
+
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+
+    const update = () => setTop(vv.offsetTop + vv.height - SHEET_HEIGHT);
+
+    update();
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+    };
+  }, []);
 
   function changeQty(next: number) {
     setQty(next);
@@ -49,6 +72,7 @@ export function QuantitySheet({
         role="dialog"
         aria-modal="true"
         aria-label="Select Quantity"
+        style={top !== null ? { top } : undefined}
         className="fixed inset-x-0 bottom-0 z-50 flex h-112 flex-col gap-6 rounded-t-3xl border border-[#EDEDED] bg-white pt-1.75 pr-4 pb-13 pl-4 shadow-[0px_6px_20px_0px_#0000000D]"
       >
         {/* Drag handle */}
