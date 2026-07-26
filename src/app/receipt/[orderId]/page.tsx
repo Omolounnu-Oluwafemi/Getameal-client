@@ -6,7 +6,7 @@ import stewImg from '../../../../public/images/kitchen/stew-and-sauce.png';
 
 import { ReceiptClient } from '@/components/features/receipt-client';
 import { getOrder } from '@/lib/api';
-import type { OrderDetails } from '@/lib/orders';
+import { imageUrl, type OrderDetails } from '@/lib/orders';
 
 /** Collapse repeated add-on entries (one per unit) into name + count rows. */
 function groupAddOns(addOns: { name: string; price: number }[]) {
@@ -25,9 +25,8 @@ function groupAddOns(addOns: { name: string; price: number }[]) {
 function toReceiptItems(order: OrderDetails) {
   // Items without a photo fall back to the cook's profile image, then the
   // app icon — never an unrelated dish photo.
-  const fallback = order.cook.profileImage?.startsWith('https://res.cloudinary.com/')
-    ? order.cook.profileImage
-    : '/icon.svg';
+  const cookImage = imageUrl(order.cook.profileImage);
+  const fallback = cookImage?.startsWith('https://res.cloudinary.com/') ? cookImage : '/icon.svg';
 
   return order.items.map((item) => ({
     id: item.id,

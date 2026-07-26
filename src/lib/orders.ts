@@ -113,6 +113,18 @@ export async function createFoodRequest(
   }
 }
 
+/**
+ * The backend has returned `profileImage` both as a plain Cloudinary URL
+ * string and as `{ url, publicId }` — accept either shape.
+ */
+export type RemoteImage = string | { url: string; publicId?: string } | null | undefined;
+
+/** Safely pulls the URL out of either shape `RemoteImage` can take. */
+export function imageUrl(image: RemoteImage): string | undefined {
+  if (!image) return undefined;
+  return typeof image === 'string' ? image : image.url;
+}
+
 // Shape of GET /api/customers/orders/:id?phone=...
 export interface OrderDetails {
   id: string;
@@ -133,11 +145,25 @@ export interface OrderDetails {
     subtotal: number;
     productImage: string | null;
   }[];
+  /** Present instead of `items` for custom ("food request") orders. */
   customOrderTitle?: string | null;
   customOrderDescription?: string | null;
+  subtotal?: number;
+  serviceFee?: number;
+  paystackFee?: number;
   totalAmount: number;
   status: string;
   paymentStatus: string;
+  paymentMethod?: string;
+  paymentReference?: string;
+  /** Our own /pay/[orderId] wrapper URL — auto-redirects, shows branded preview when shared. */
+  paymentLink?: string;
+  /** The direct Paystack checkout URL — use this for an in-app "Pay" button. */
+  rawPaymentLink?: string;
+  isPaid?: boolean;
+  statusHistory?: { current: string; previous: string | null };
+  receiptUrl?: string;
+  feesAddedToCustomer?: boolean;
   deliveryType: 'pickup' | 'delivery';
   deliveryAddress?: string | null;
   readyDate: string;
@@ -155,12 +181,16 @@ export interface OrderDetails {
     storeName: string;
     storeHandle: string;
     storeLink: string;
-    profileImage: string;
+    profileImage: RemoteImage;
     kitchenAddress: string;
     pickupLandmark: string;
     pickupWindow: { from: string; to: string };
+    pickupEnabled?: boolean;
+    deliveryEnabled?: boolean;
     rating?: number;
     reviewsCount?: number;
+    isApproved?: boolean;
+    isAvailable?: boolean;
   };
 }
 

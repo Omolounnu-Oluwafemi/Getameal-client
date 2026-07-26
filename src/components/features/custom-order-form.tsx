@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 
 // ---------------------------------------------------------------------------
@@ -202,6 +203,10 @@ export function CustomOrderForm({
 }: CustomOrderFormProps) {
   const router = useRouter();
   const { kitchenId } = useParams<{ kitchenId: string }>();
+  // isPending stays true until the checkout preview page's own data (a live
+  // backend fetch) is ready — without this the button gives no feedback
+  // while that navigation is in flight.
+  const [isNavigating, startNavigating] = useTransition();
   const [order, setOrder] = useState('');
   const [notes, setNotes] = useState('');
   const [phone, setPhone] = useState('');
@@ -247,7 +252,9 @@ export function CustomOrderForm({
         address: deliveryType === 'delivery' ? address.trim() : '',
       }),
     );
-    router.push(`/${kitchenId}/custom-order/checkout`);
+    startNavigating(() => {
+      router.push(`/${kitchenId}/custom-order/checkout`);
+    });
   }
 
   return (
@@ -437,10 +444,14 @@ export function CustomOrderForm({
           <Button
             variant="brand"
             onClick={handleSubmit}
-            disabled={!canSubmit}
+            disabled={!canSubmit || isNavigating}
             className="h-14 w-full rounded-full text-base font-semibold disabled:opacity-50"
           >
-            Send request
+            {isNavigating ? (
+              <Spinner className="h-5 w-5 border-2 border-white/30 border-t-white" />
+            ) : (
+              'Send request'
+            )}
           </Button>
         </div>
       </div>

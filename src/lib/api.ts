@@ -79,7 +79,7 @@ export async function getStore(handle: string): Promise<StoreResponse | null> {
     if (!res.ok) return null;
 
     const data = (await res.json()) as StoreResponse;
-    console.log('Fetched store data:', JSON.stringify(data, null, 2));
+    // console.log('Fetched store data:', JSON.stringify(data, null, 2));
     return data.success ? data : null;
   } catch (error) {
     console.error(`Failed to fetch store "${handle}":`, error);
