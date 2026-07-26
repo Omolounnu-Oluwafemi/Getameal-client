@@ -1,16 +1,18 @@
+import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import bannerImg from '../../../../public/images/kitchen/banner.jpg';
 
-import { CloseIcon, ShareIcon } from '@/components/icons';
+import { CloseIcon } from '@/components/icons';
 import { MealDescriptionCard } from '@/components/features/meal-description-card';
 import { MealDetailClient } from '@/components/features/meal-detail-client';
 import { MealFulfilmentCard } from '@/components/features/meal-fulfilment-card';
 import { MealGalleryHeader } from '@/components/features/meal-gallery-header';
 import { MealPriceCard } from '@/components/features/meal-price-card';
 import { MealProductInsightCard } from '@/components/features/meal-product-insight-card';
+import { MealShareButton } from '@/components/features/meal-share-button';
 import { getProduct, unitLabel } from '@/lib/api';
 import type { ImageSrc, MealDetail } from '@/types';
 
@@ -18,13 +20,41 @@ function safeImage(url: string | undefined, fallback: ImageSrc): ImageSrc {
   return url?.startsWith('https://res.cloudinary.com/') ? url : fallback;
 }
 
-export default async function MealDetailPage({
-  params,
-  searchParams,
-}: {
+interface PageProps {
   params: Promise<{ id: string }>;
   searchParams: Promise<{ kitchen?: string; qty?: string }>;
-}) {
+}
+
+// WhatsApp/social previews for a meal link should show the dish's own photo
+// and name, not the generic GetaMeal card — same idea as the kitchen and
+// order pages' metadata.
+export async function generateMetadata({ params, searchParams }: PageProps): Promise<Metadata> {
+  const { id } = await params;
+  const { kitchen } = await searchParams;
+  if (!kitchen) return {};
+
+  const result = await getProduct(kitchen, id);
+  if (!result) return {};
+
+  const { store, product } = result;
+  const title = product.name;
+  const description = product.whatsIncluded || `Order from ${store.storeName} on GetaMeal.`;
+  const image =
+    product.images.find((img) => img.url?.startsWith('https://res.cloudinary.com/'))?.url ||
+    (store.coverImage?.startsWith('https://res.cloudinary.com/') ? store.coverImage : undefined);
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      images: image ? [{ url: image }] : undefined,
+    },
+  };
+}
+
+export default async function MealDetailPage({ params, searchParams }: PageProps) {
   const { id } = await params;
   const { kitchen, qty } = await searchParams;
   const initialQty = Math.max(1, Number.parseInt(qty ?? '1', 10) || 1);
@@ -95,12 +125,7 @@ export default async function MealDetailPage({
       >
         <CloseIcon />
       </Link>
-      <button
-        className="fixed top-28 right-4 z-40 flex h-10 w-10 items-center justify-center rounded-full bg-white p-2.5 shadow-[0px_4px_20px_0px_#00000040]"
-        aria-label="Share"
-      >
-        <ShareIcon />
-      </button>
+      <MealShareButton mealName={meal.name} kitchenName={store.storeName} />
 
       {/* Meal sheet — fixed in place; only its content scrolls */}
       <div className="absolute inset-x-0 top-24 bottom-0 overflow-y-auto rounded-t-[20px] bg-white">

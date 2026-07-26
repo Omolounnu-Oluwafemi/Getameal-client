@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 
@@ -55,6 +56,36 @@ function toKitchen(handle: string, { store, products }: StoreResponse): Kitchen 
 }
 
 const fmt = (amount: number) => `₦${amount.toLocaleString('en-NG')}`;
+
+// WhatsApp/social previews for a kitchen link should show its own cover
+// photo and name, not the generic GetaMeal card — same idea as /pay and
+// /order's metadata.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ kitchenId: string }>;
+}): Promise<Metadata> {
+  const { kitchenId } = await params;
+  const data = await getStore(kitchenId);
+  if (!data) return {};
+
+  const { store } = data;
+  const title = store.storeName;
+  const description = store.storeDescription || `Order from ${store.storeName} on GetaMeal.`;
+  const image = store.coverImage?.startsWith('https://res.cloudinary.com/')
+    ? store.coverImage
+    : undefined;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      images: image ? [{ url: image }] : undefined,
+    },
+  };
+}
 
 export default async function KitchenPage({ params }: { params: Promise<{ kitchenId: string }> }) {
   const { kitchenId } = await params;
