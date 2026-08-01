@@ -90,7 +90,7 @@ export function ReviewsClient({
   const hasReviews = reviewCount > 0;
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="flex min-h-screen flex-col bg-white">
       {/* Header */}
       <div className="relative flex items-center justify-center px-5 pt-8 pb-2">
         <Link
@@ -118,8 +118,8 @@ export function ReviewsClient({
         </button>
       </div>
 
-      {/* Review list */}
-      <div className="rounded-t-[20px] bg-white px-4 pt-5 pb-6 shadow-[0px_4px_30px_0px_#0000000D]">
+      {/* Review list — stretches to fill the rest of the screen, even empty. */}
+      <div className="flex flex-1 flex-col rounded-t-[20px] bg-white px-4 pt-5 pb-6 shadow-[0px_4px_30px_0px_#0000000D]">
         <h2 className="pb-4 text-base font-bold text-black">
           {reviewCount} {reviewCount === 1 ? 'Review' : 'Reviews'}
         </h2>
@@ -143,14 +143,16 @@ export function ReviewsClient({
             ))}
           </div>
         ) : (
-          /* Empty state */
-          <div className="relative mt-16 flex flex-col items-center overflow-hidden pb-24">
-            <div className="absolute bottom-0 left-1/2 h-40 w-64 -translate-x-1/2">
-              <div className="absolute left-0 h-32 w-32 rounded-full bg-[#FE4141]/20 blur-2xl" />
-              <div className="absolute right-0 h-32 w-32 rounded-full bg-[#209D01]/20 blur-2xl" />
+          /* Empty state — centered in whatever space is left */
+          <div className="mt-10 flex flex-col items-center justify-center">
+            <div className="relative flex flex-col items-center">
+              <div className="absolute inset-x-0 bottom-0 mx-auto h-40 w-64">
+                <div className="absolute left-0 h-32 w-32 rounded-full bg-[#FE4141]/20 blur-2xl" />
+                <div className="absolute right-0 h-32 w-32 rounded-full bg-[#209D01]/20 blur-2xl" />
+              </div>
+              <NoReview className="relative" />
+              <p className="relative mt-2 text-base font-semibold text-black">No reviews yet</p>
             </div>
-            <NoReview className="relative" />
-            <p className="relative mt-2 text-base font-semibold text-black">No reviews yet</p>
           </div>
         )}
       </div>

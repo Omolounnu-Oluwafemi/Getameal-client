@@ -46,20 +46,13 @@ export interface KitchenMealItem {
   price: number;
   unit: string;
   soldCount: number;
-  popular?: boolean;
-  category: string;
+  isAvailable: boolean;
 }
 
 export interface KitchenStats {
   totalOrders: number;
   rating?: number;
   reviewCount?: number;
-}
-
-export interface KitchenCategory {
-  id: string;
-  name: string;
-  image: ImageSrc;
 }
 
 export interface Kitchen {
@@ -72,6 +65,5 @@ export interface Kitchen {
   pickup: { available: boolean };
   delivery: { available: boolean; price: number };
   stats: KitchenStats;
-  categories: KitchenCategory[];
   meals: KitchenMealItem[];
 }

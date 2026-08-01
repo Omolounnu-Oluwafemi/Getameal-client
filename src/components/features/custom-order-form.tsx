@@ -260,8 +260,9 @@ export function CustomOrderForm({
   return (
     <>
       <p className="mb-6 text-sm leading-relaxed text-[#797979]">
-        Tell {kitchenName} what you&apos;d like. They&apos;ll confirm availability, price, and
-        pickup/delivery details on WhatsApp.
+        Tell {kitchenName}{' '}
+        what you&apos;d like. They&apos;ll confirm availability, price, and pickup/delivery
+        details on WhatsApp.
       </p>
 
       <div className="space-y-4">

@@ -7,13 +7,14 @@ import Link from 'next/link';
 
 import { CheckoutSheet } from '@/components/features/checkout-sheet';
 import { KitchenMealCard } from '@/components/features/kitchen-meal-card';
+import { MealExtrasCard } from '@/components/features/meal-extras-card';
 import { StickyBar } from '@/components/features/sticky-bar';
 import { MinusIcon, PlusIcon, TrashIcon } from '@/components/icons';
 import { Spinner } from '@/components/ui/spinner';
 import { Toast } from '@/components/ui/toast';
 import { addToCart, getCart, removeFromCart } from '@/lib/cart';
 import type { Cart } from '@/lib/cart';
-import type { KitchenMealItem } from '@/types';
+import type { Extra, KitchenMealItem } from '@/types';
 
 interface BasketItem {
   id: string;
@@ -33,6 +34,8 @@ interface BasketClientProps {
   deliveryFee: number;
   /** Shown for items without a photo — the cook's profile image or app icon. */
   fallbackImage: string;
+  /** Each product's full extras catalog, keyed by product id. */
+  productExtras: Record<string, Extra[]>;
 }
 
 const fmt = (n: number) => `₦${n.toLocaleString('en-NG')}`;
@@ -57,6 +60,7 @@ export function BasketClient({
   kitchenId,
   deliveryFee,
   fallbackImage,
+  productExtras,
 }: BasketClientProps) {
   // null = still loading from the cart API.
   const [items, setItems] = useState<BasketItem[] | null>(null);
@@ -98,6 +102,55 @@ export function BasketClient({
       await removeFromCart(item.productId);
       cart = await addToCart({ productId: item.productId, quantity: newQty, addOns: item.addOns });
     }
+
+    if (cart) {
+      setItems(mapCart(cart));
+    } else {
+      setErrorVisible(true);
+    }
+    setBusyItemId(null);
+  }
+
+  // One combined "Extras" list across every cart item's product catalog,
+  // deduped by extra id — each extra is attributed to whichever cart item's
+  // product it belongs to (extras don't overlap across different dishes in
+  // practice), so +/- knows which cart line to update.
+  const extraOwner = new Map<string, BasketItem>();
+  const allExtras: Extra[] = [];
+  for (const item of items ?? []) {
+    for (const extra of productExtras[item.productId] ?? []) {
+      if (!extraOwner.has(extra.id)) {
+        extraOwner.set(extra.id, item);
+        allExtras.push(extra);
+      }
+    }
+  }
+  const addedExtraQtyById: Record<string, number> = {};
+  for (const item of items ?? []) {
+    for (const addOn of item.addOns) {
+      const extra = allExtras.find((e) => e.name === addOn.name);
+      if (extra) addedExtraQtyById[extra.id] = (addedExtraQtyById[extra.id] ?? 0) + 1;
+    }
+  }
+
+  const EXTRAS_BUSY_KEY = '__extras__';
+
+  async function changeExtraQty(extra: Extra, delta: 1 | -1) {
+    if (busyItemId) return;
+    const item = extraOwner.get(extra.id);
+    if (!item) return;
+    setBusyItemId(EXTRAS_BUSY_KEY);
+
+    const addOns = [...item.addOns];
+    if (delta > 0) {
+      addOns.push({ name: extra.name, price: extra.price });
+    } else {
+      const idx = addOns.findIndex((a) => a.name === extra.name);
+      if (idx !== -1) addOns.splice(idx, 1);
+    }
+
+    await removeFromCart(item.productId);
+    const cart = await addToCart({ productId: item.productId, quantity: item.qty, addOns });
 
     if (cart) {
       setItems(mapCart(cart));
@@ -190,6 +243,16 @@ export function BasketClient({
                 />
               ))}
             </div>
+          )}
+
+          {/* Extras — combined across every item in the basket */}
+          {allExtras.length > 0 && (
+            <MealExtrasCard
+              extras={allExtras}
+              addedQtyById={addedExtraQtyById}
+              onIncrement={(extra) => changeExtraQty(extra, 1)}
+              onDecrement={(extra) => changeExtraQty(extra, -1)}
+            />
           )}
 
           {/* More from this seller */}

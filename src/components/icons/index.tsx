@@ -221,6 +221,53 @@ export function ShareMenuIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+export function NewCustomOrderIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      width="22"
+      height="22"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+    >
+      <path
+        d="M18.333 16.5V9.167c0-1.73 0-2.594-.537-3.13-.537-.537-1.4-.537-3.13-.537h-11v11c0 1.728 0 2.592.538 3.13.537.537 1.4.537 3.13.537h7.333c1.728 0 2.592 0 3.13-.538.536-.537.536-1.401.536-3.129Z"
+        stroke="#fff"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M8.25 12.833a2.75 2.75 0 0 1 5.5 0M11 10.083v-.916m2.75 3.666h-5.5m5.5 0h.917m-6.417 0h-.917m0 3.667h7.334m-11-11 6.77-2.836c1.51-.634 2.266-.95 2.868-.788.39.104.736.336.981.657.38.497.38 1.32.38 2.967"
+        stroke="#fff"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function SearchIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+    >
+      <circle cx="9.167" cy="9.167" r="6.667" stroke="currentColor" strokeWidth="1.5" />
+      <path
+        d="M17.5 17.5L14.167 14.167"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
 
 export function TotalOrdersIcon({ className }: { className?: string }) {
   return (
@@ -323,6 +370,18 @@ export const ShareIcon = ({ className }: { className?: string }) => (
       strokeWidth="1.5"
       d="M8 7s2.196-2.716 3.404-3.76a.9.9 0 0 1 .63-.239.92.92 0 0 1 .562.238C13.804 4.284 16 7 16 7m-3.966-3v11M8 11c-1.4 0-2.1 0-2.635.273a2.5 2.5 0 0 0-1.093 1.092C4 12.9 4 13.6 4 15v1c0 2.357 0 3.535.732 4.268S6.643 21 9 21h6c2.357 0 3.535 0 4.268-.732C20 19.535 20 18.358 20 16v-1c0-1.4 0-2.1-.273-2.635a2.5 2.5 0 0 0-1.092-1.092C18.1 11 17.4 11 16 11"
     ></path>
+  </svg>
+);
+
+export const NewShareIcon = ({ className }: { className?: string }) => (
+  <svg width={24} height={24} fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <path
+      d="M15.75 9h1.875a1.875 1.875 0 0 1 1.875 1.875v9a1.875 1.875 0 0 1-1.875 1.875H6.375A1.875 1.875 0 0 1 4.5 19.875v-9A1.875 1.875 0 0 1 6.375 9H8.25m0-3L12 2.25 15.75 6M12 2.25v12.797"
+      stroke="#000"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </svg>
 );
 
