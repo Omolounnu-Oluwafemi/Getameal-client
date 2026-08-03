@@ -21,7 +21,7 @@ export function MealExtrasCard({
 }: MealExtrasCardProps) {
   return (
     <section className="rounded-[20px] border-[0.73px] border-[#E1E1E1] bg-white px-5 py-6 shadow-[0px_4px_20px_0px_#0000000D]">
-      <h2 className="font-poppins mb-3 text-base leading-5.5 font-semibold text-black">Extras</h2>
+      <h2 className="font-inter mb-3 text-base leading-5.5 font-semibold text-black">Extras</h2>
       <div className="mb-4 h-px bg-[#E1E1E1]" />
       <ul className="space-y-2.5">
         {extras.map((extra, i) => {

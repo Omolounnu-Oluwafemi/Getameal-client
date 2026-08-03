@@ -4,7 +4,7 @@ export function MealDescriptionCard({ description }: { description: string }) {
       <h2 className="font-inter text-base font-semibold leading-5.5 text-black">
         What&apos;s included
       </h2>
-      <p className="font-poppins mt-2.5 text-sm font-normal leading-5.5 text-[#5C5C5C]">{description}</p>
+      <p className="font-inter mt-2.5 text-sm font-normal leading-5.5 text-[#5C5C5C]">{description}</p>
     </section>
   );
 }
