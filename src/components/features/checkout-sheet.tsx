@@ -210,13 +210,13 @@ export function CheckoutSheet({ onClose, kitchenId, deliveryFee = 2300 }: Checko
                 </button>
 
                 {dropdownOpen && (
-                  <div className="mt-2 overflow-hidden rounded-2xl border border-[#EDEDED] bg-white shadow-[0px_4px_20px_0px_#0000001A]">
+                  <div className="absolute top-full right-0 z-20 mt-2 w-[90%] overflow-hidden rounded-2xl border border-[#EDEDED] bg-white shadow-[0px_4px_20px_0px_#0000001A]">
                     <button
                       onClick={() => {
                         setDelivery('pickup');
                         setDropdownOpen(false);
                       }}
-                      className="flex w-full items-center justify-between p-4 text-left hover:bg-neutral-50"
+                      className="flex w-full items-center justify-between p-3 text-left hover:bg-neutral-50"
                     >
                       <div>
                         <p className="text-sm font-semibold text-black">Pickup - Free</p>
@@ -234,13 +234,13 @@ export function CheckoutSheet({ onClose, kitchenId, deliveryFee = 2300 }: Checko
                         />
                       </svg>
                     </button>
-                    <div className="mx-4 h-px bg-[#EDEDED]" />
+                    <div className="mx-3 h-px bg-[#EDEDED]" />
                     <button
                       onClick={() => {
                         setDelivery('delivery');
                         setDropdownOpen(false);
                       }}
-                      className="flex w-full items-center justify-between p-4 text-left hover:bg-neutral-50"
+                      className="flex w-full items-center justify-between p-3 text-left hover:bg-neutral-50"
                     >
                       <div>
                         <p className="text-sm font-semibold text-black">

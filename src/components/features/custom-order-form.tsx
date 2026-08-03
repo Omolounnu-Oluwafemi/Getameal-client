@@ -265,7 +265,17 @@ export function CustomOrderForm({
         details on WhatsApp.
       </p>
 
-      <div className="space-y-4">
+      <div
+        className="space-y-4"
+        onFocusCapture={(e) => {
+          const field = e.target;
+          if (field.matches('input, textarea')) {
+            // Wait for the keyboard animation, then nudge the field into the
+            // now-smaller visible area if the fixed submit bar is covering it.
+            setTimeout(() => field.scrollIntoView({ block: 'center', behavior: 'smooth' }), 300);
+          }
+        }}
+      >
         <div>
           <label className={LABEL}>What would you like?</label>
           <Input

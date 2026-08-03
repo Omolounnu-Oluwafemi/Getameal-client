@@ -118,6 +118,9 @@ export function ConfirmPayClient({
   );
   const shippingCost = deliveryMethod === 'delivery' ? deliveryFee : 0;
   const totalToPay = itemsTotal + shippingCost;
+  // Extras, combined across every item in the order (rather than repeated
+  // under each item), matching the "Your order" / "Extras" split elsewhere.
+  const allAddOns = groupAddOns((items ?? []).flatMap((item) => item.addOns));
 
   async function handlePay() {
     if (paying || !items || items.length === 0) return;
@@ -152,7 +155,7 @@ export function ConfirmPayClient({
       {/* Header */}
       <div className="relative flex items-center justify-center px-5 pt-8 pb-10">
         <Link
-          href="/basket"
+          href={`/basket?kitchen=${kitchenId}`}
           className="absolute left-5 flex h-9 w-9 items-center justify-center"
           aria-label="Back"
         >
@@ -227,46 +230,47 @@ export function ConfirmPayClient({
             </div>
           ) : (
             items.map((item) => (
-              <div key={item.id}>
-                {/* Main item row */}
-                <div className="flex items-center gap-3 p-4">
-                  <div className="relative h-12.75 w-13.75 shrink-0 overflow-hidden rounded-[14px] bg-neutral-100">
-                    <Image
-                      src={
-                        item.image?.startsWith('https://res.cloudinary.com/')
-                          ? item.image
-                          : fallbackImage
-                      }
-                      alt={item.name}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-black">{item.name}</p>
-                    <p className="text-sm font-medium text-black">
-                      Qty {item.qty} · {fmt(item.price)} each
-                    </p>
-                  </div>
+              <div key={item.id} className="flex items-center gap-3 p-4">
+                <div className="relative h-12.75 w-13.75 shrink-0 overflow-hidden rounded-[14px] bg-neutral-100">
+                  <Image
+                    src={
+                      item.image?.startsWith('https://res.cloudinary.com/')
+                        ? item.image
+                        : fallbackImage
+                    }
+                    alt={item.name}
+                    fill
+                    className="object-cover"
+                  />
                 </div>
-
-                {/* Add-ons */}
-                {groupAddOns(item.addOns).map((addon) => (
-                  <div
-                    key={addon.name}
-                    className="mx-4 mb-4 rounded-[14px] border border-[#EDEDED] px-4 py-3"
-                  >
-                    <p className="text-sm font-semibold text-black">{addon.name}</p>
-                    <p className="text-sm font-medium text-black">
-                      Qty {addon.qty} · {fmt(addon.price)} each
-                    </p>
-                  </div>
-                ))}
+                <div>
+                  <p className="text-sm font-semibold text-black">{item.name}</p>
+                  <p className="text-sm font-medium text-black">
+                    Qty {item.qty} · {fmt(item.price)} each
+                  </p>
+                </div>
               </div>
             ))
           )}
         </div>
       </div>
+
+      {/* Extras — combined across every item in the order */}
+      {allAddOns.length > 0 && (
+        <div className="px-5 py-3">
+          <div className="divide-y divide-[#EDEDED] rounded-[20px] border border-[#EDEDED] bg-white shadow-[0px_4px_20px_0px_#0000000D]">
+            <h2 className="p-4 text-base font-bold text-black">Extras</h2>
+            {allAddOns.map((addon) => (
+              <div key={addon.name} className="p-4">
+                <p className="text-sm text-neutral-500">{addon.name}</p>
+                <p className="text-sm font-semibold text-black">
+                  Qty {addon.qty} · {fmt(addon.price)} each
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Price details */}
       <div className="px-5 py-3">
@@ -302,7 +306,7 @@ export function ConfirmPayClient({
       </p>
 
       {/* Fixed pay button */}
-      <div className="fixed inset-x-0 bottom-0 z-30 bg-white px-5 pt-4 pb-10 shadow-[0px_-4px_20px_0px_#0000001A]">
+      <div className="fixed inset-x-0 bottom-0 z-30 px-5 pt-4 pb-10">
         <Button
           variant="brand"
           onClick={handlePay}

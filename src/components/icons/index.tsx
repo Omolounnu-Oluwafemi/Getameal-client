@@ -233,16 +233,16 @@ export function NewCustomOrderIcon({ className }: { className?: string }) {
       <path
         d="M18.333 16.5V9.167c0-1.73 0-2.594-.537-3.13-.537-.537-1.4-.537-3.13-.537h-11v11c0 1.728 0 2.592.538 3.13.537.537 1.4.537 3.13.537h7.333c1.728 0 2.592 0 3.13-.538.536-.537.536-1.401.536-3.129Z"
         stroke="#fff"
-        stroke-width="1.5"
-        stroke-linecap="round"
-        stroke-linejoin="round"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
       <path
         d="M8.25 12.833a2.75 2.75 0 0 1 5.5 0M11 10.083v-.916m2.75 3.666h-5.5m5.5 0h.917m-6.417 0h-.917m0 3.667h7.334m-11-11 6.77-2.836c1.51-.634 2.266-.95 2.868-.788.39.104.736.336.981.657.38.497.38 1.32.38 2.967"
         stroke="#fff"
-        stroke-width="1.5"
-        stroke-linecap="round"
-        stroke-linejoin="round"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );

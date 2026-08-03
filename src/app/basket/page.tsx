@@ -52,6 +52,12 @@ export default async function BasketPage({
     ]),
   );
 
+  // Not returned by the store API yet — always 0 until the backend adds a
+  // real per-product sold count.
+  const productSoldCount: Record<string, number> = Object.fromEntries(
+    (data?.products ?? []).map((p) => [p.id, 0]),
+  );
+
   return (
     <BasketClient
       moreMeals={moreMeals}
@@ -61,6 +67,7 @@ export default async function BasketPage({
       deliveryFee={data?.store.deliveryFee ?? 0}
       fallbackImage={productFallback}
       productExtras={productExtras}
+      productSoldCount={productSoldCount}
     />
   );
 }

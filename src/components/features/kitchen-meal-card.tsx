@@ -74,7 +74,7 @@ export function KitchenMealCard({
         />
       )}
       {/* Image */}
-      <div className="relative h-50 w-full overflow-hidden rounded-[20px] bg-neutral-100 shadow-[0px_4px_20px_0px_#00000029]">
+      <div className="relative h-42 w-full overflow-hidden rounded-[20px] bg-neutral-100 shadow-[0px_4px_20px_0px_#00000029]">
         <Image
           src={meal.imageUrl}
           alt={meal.name}

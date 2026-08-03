@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
-
 import { CheckoutSheet } from '@/components/features/checkout-sheet';
 import { KitchenMealCard } from '@/components/features/kitchen-meal-card';
 import { MealExtrasCard } from '@/components/features/meal-extras-card';
@@ -24,6 +23,7 @@ interface BasketItem {
   qty: number;
   image: string;
   addOns: { name: string; price: number }[];
+  soldCount: number;
 }
 
 interface BasketClientProps {
@@ -36,11 +36,13 @@ interface BasketClientProps {
   fallbackImage: string;
   /** Each product's full extras catalog, keyed by product id. */
   productExtras: Record<string, Extra[]>;
+  /** Each product's sold count, keyed by product id. */
+  productSoldCount: Record<string, number>;
 }
 
 const fmt = (n: number) => `₦${n.toLocaleString('en-NG')}`;
 
-function mapCart(cart: Cart | null): BasketItem[] {
+function mapCart(cart: Cart | null, productSoldCount: Record<string, number>): BasketItem[] {
   return (cart?.items ?? []).map((item) => ({
     // The cart keeps one line per product, so productId is the stable row id.
     id: item.productId,
@@ -50,6 +52,7 @@ function mapCart(cart: Cart | null): BasketItem[] {
     qty: item.quantity,
     image: item.image,
     addOns: item.addOns.map((a) => ({ name: a.name, price: a.price })),
+    soldCount: productSoldCount[item.productId] ?? 0,
   }));
 }
 
@@ -61,6 +64,7 @@ export function BasketClient({
   deliveryFee,
   fallbackImage,
   productExtras,
+  productSoldCount,
 }: BasketClientProps) {
   // null = still loading from the cart API.
   const [items, setItems] = useState<BasketItem[] | null>(null);
@@ -72,6 +76,7 @@ export function BasketClient({
   useEffect(() => {
     let cancelled = false;
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPickupDay(
       new Date(Date.now() + preparationDays * 86_400_000).toLocaleDateString('en-NG', {
         weekday: 'long',
@@ -80,13 +85,13 @@ export function BasketClient({
 
     getCart().then((cart) => {
       if (cancelled) return;
-      setItems(mapCart(cart));
+      setItems(mapCart(cart, productSoldCount));
     });
 
     return () => {
       cancelled = true;
     };
-  }, [preparationDays]);
+  }, [preparationDays, productSoldCount]);
 
   async function changeQty(item: BasketItem, delta: number) {
     if (busyItemId) return;
@@ -104,7 +109,7 @@ export function BasketClient({
     }
 
     if (cart) {
-      setItems(mapCart(cart));
+      setItems(mapCart(cart, productSoldCount));
     } else {
       setErrorVisible(true);
     }
@@ -112,15 +117,19 @@ export function BasketClient({
   }
 
   // One combined "Extras" list across every cart item's product catalog,
-  // deduped by extra id — each extra is attributed to whichever cart item's
-  // product it belongs to (extras don't overlap across different dishes in
-  // practice), so +/- knows which cart line to update.
+  // deduped by NAME (not id — the backend gives each product's add-ons their
+  // own id even when two products both offer e.g. "Extra Chicken", so id-based
+  // dedup let the same-named extra show up once per product). Each extra is
+  // attributed to whichever cart item's product it was first seen on, so +/-
+  // knows which cart line to update.
   const extraOwner = new Map<string, BasketItem>();
+  const seenExtraNames = new Set<string>();
   const allExtras: Extra[] = [];
   for (const item of items ?? []) {
     for (const extra of productExtras[item.productId] ?? []) {
-      if (!extraOwner.has(extra.id)) {
-        extraOwner.set(extra.id, item);
+      if (!seenExtraNames.has(extra.name)) {
+        seenExtraNames.add(extra.name);
+        extraOwner.set(extra.name, item);
         allExtras.push(extra);
       }
     }
@@ -132,12 +141,15 @@ export function BasketClient({
       if (extra) addedExtraQtyById[extra.id] = (addedExtraQtyById[extra.id] ?? 0) + 1;
     }
   }
+  // Only extras actually in the order — removing one down to 0 drops it from
+  // the list rather than leaving a bare "+" behind.
+  const addedExtras = allExtras.filter((extra) => (addedExtraQtyById[extra.id] ?? 0) > 0);
 
   const EXTRAS_BUSY_KEY = '__extras__';
 
   async function changeExtraQty(extra: Extra, delta: 1 | -1) {
     if (busyItemId) return;
-    const item = extraOwner.get(extra.id);
+    const item = extraOwner.get(extra.name);
     if (!item) return;
     setBusyItemId(EXTRAS_BUSY_KEY);
 
@@ -153,7 +165,7 @@ export function BasketClient({
     const cart = await addToCart({ productId: item.productId, quantity: item.qty, addOns });
 
     if (cart) {
-      setItems(mapCart(cart));
+      setItems(mapCart(cart, productSoldCount));
     } else {
       setErrorVisible(true);
     }
@@ -161,14 +173,13 @@ export function BasketClient({
   }
 
   const totalPrice = (items ?? []).reduce(
-    (sum, item) =>
-      sum + item.price * item.qty + item.addOns.reduce((s, a) => s + a.price, 0),
+    (sum, item) => sum + item.price * item.qty + item.addOns.reduce((s, a) => s + a.price, 0),
     0,
   );
   const totalItems = (items ?? []).reduce((sum, item) => sum + item.qty, 0);
-  // Reused for the "More from this seller" cards, so they show the count
-  // already in the basket instead of "+".
   const cartQtyById = Object.fromEntries((items ?? []).map((item) => [item.productId, item.qty]));
+  // Meals already in the basket don't need to be suggested again.
+  const suggestedMeals = moreMeals.filter((meal) => !cartQtyById[meal.id]);
 
   return (
     <>
@@ -246,9 +257,9 @@ export function BasketClient({
           )}
 
           {/* Extras — combined across every item in the basket */}
-          {allExtras.length > 0 && (
+          {addedExtras.length > 0 && (
             <MealExtrasCard
-              extras={allExtras}
+              extras={addedExtras}
               addedQtyById={addedExtraQtyById}
               onIncrement={(extra) => changeExtraQty(extra, 1)}
               onDecrement={(extra) => changeExtraQty(extra, -1)}
@@ -256,18 +267,13 @@ export function BasketClient({
           )}
 
           {/* More from this seller */}
-          {moreMeals.length > 0 && (
+          {suggestedMeals.length > 0 && (
             <div className="pt-2">
               <h2 className="mb-4 text-base font-semibold text-black">More from this seller</h2>
               <div className="-mx-5 flex scrollbar-none gap-3 overflow-x-auto px-5 pb-2">
-                {moreMeals.map((meal) => (
+                {suggestedMeals.map((meal) => (
                   <div key={meal.id} className="w-47.75 shrink-0">
-                    <KitchenMealCard
-                      meal={meal}
-                      isKitchenOpen
-                      kitchenId={kitchenId}
-                      cartQty={cartQtyById[meal.id] ?? 0}
-                    />
+                    <KitchenMealCard meal={meal} isKitchenOpen kitchenId={kitchenId} cartQty={0} />
                   </div>
                 ))}
               </div>
@@ -335,11 +341,7 @@ function CartItemRow({
       <div className="min-w-0 flex-1">
         <div className="flex flex-col gap-1 self-start">
           <p className="text-sm leading-tight font-medium text-black">{item.name}</p>
-          {item.addOns.length > 0 && (
-            <p className="text-xs text-[#5C5C5C]">
-              {item.addOns.map((a) => `+ ${a.name} (${fmt(a.price)})`).join(' · ')}
-            </p>
-          )}
+          <p className="text-sm font-medium text-[#209D01]">{item.soldCount} Sold</p>
         </div>
 
         <div className="flex items-center justify-between gap-1 pt-2">

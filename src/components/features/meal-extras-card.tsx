@@ -20,9 +20,10 @@ export function MealExtrasCard({
   onDecrement,
 }: MealExtrasCardProps) {
   return (
-    <section className="rounded-[20px] border-[0.73px] border-[#EDEDED] bg-white px-5 py-6 shadow-[0px_4px_20px_0px_#0000000D]">
+    <section className="rounded-[20px] border-[0.73px] border-[#E1E1E1] bg-white px-5 py-6 shadow-[0px_4px_20px_0px_#0000000D]">
       <h2 className="font-poppins mb-3 text-base leading-5.5 font-semibold text-black">Extras</h2>
-      <ul className="space-y-3">
+      <div className="mb-4 h-px bg-[#E1E1E1]" />
+      <ul className="space-y-2.5">
         {extras.map((extra, i) => {
           const qty = addedQtyById[extra.id] ?? 0;
           return (

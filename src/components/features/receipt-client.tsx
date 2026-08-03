@@ -43,6 +43,22 @@ const fmt = (n: number) => `₦${n.toLocaleString('en-NG')}`;
 
 const CARD = 'rounded-[20px] border border-[#EDEDED] bg-white shadow-[0px_4px_20px_0px_#0000000D]';
 
+/** Combine add-ons across every item into one list, merging same-named ones. */
+function combineAddOns(items: ReceiptItem[]): ReceiptAddOn[] {
+  const groups = new Map<string, ReceiptAddOn>();
+  for (const item of items) {
+    for (const addon of item.addOns ?? []) {
+      const existing = groups.get(addon.name);
+      if (existing) {
+        existing.qty += addon.qty;
+      } else {
+        groups.set(addon.name, { ...addon });
+      }
+    }
+  }
+  return [...groups.values()];
+}
+
 export function ReceiptClient({
   status,
   deliveryMethod,
@@ -59,6 +75,7 @@ export function ReceiptClient({
   amountPaid,
 }: ReceiptClientProps) {
   const cancelled = status === 'cancelled';
+  const allAddOns = combineAddOns(items);
 
   const rows = [
     { label: 'Order number', value: orderNumber },
@@ -164,38 +181,42 @@ export function ReceiptClient({
           <h2 className="p-4 text-base font-semibold text-black">Your order</h2>
 
           {items.map((item) => (
-            <div key={item.id}>
-              <div className="flex items-center gap-3 p-4">
-                <div className="relative h-12.75 w-13.75 shrink-0 overflow-hidden rounded-[14px] bg-neutral-100">
-                  <Image src={item.image} alt={item.name} fill className="object-cover" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-black">{item.name}</p>
-                  <p className="text-sm font-medium text-black">
-                    Qty {item.qty} {item.unit} ·{' '}
-                    <span className={cancelled ? 'line-through' : undefined}>
-                      {fmt(item.price)}
-                    </span>{' '}
-                    each
-                  </p>
-                </div>
+            <div key={item.id} className="flex items-center gap-3 p-4">
+              <div className="relative h-12.75 w-13.75 shrink-0 overflow-hidden rounded-[14px] bg-neutral-100">
+                <Image src={item.image} alt={item.name} fill className="object-cover" />
               </div>
-
-              {item.addOns?.map((addon, i) => (
-                <div key={i} className="mx-4 mb-4 rounded-[14px] border border-[#EDEDED] px-4 py-3">
-                  <p className="text-sm font-semibold text-black">{addon.name}</p>
-                  <p className="text-sm font-medium text-black">
-                    Qty {addon.qty} ·{' '}
-                    <span className={cancelled ? 'line-through' : undefined}>
-                      {fmt(addon.price)}
-                    </span>{' '}
-                    each
-                  </p>
-                </div>
-              ))}
+              <div>
+                <p className="text-sm font-semibold text-black">{item.name}</p>
+                <p className="text-sm font-medium text-black">
+                  Qty {item.qty} {item.unit} ·{' '}
+                  <span className={cancelled ? 'line-through' : undefined}>
+                    {fmt(item.price)}
+                  </span>{' '}
+                  each
+                </p>
+              </div>
             </div>
           ))}
         </div>
+
+        {/* Extras — combined across every item in the order */}
+        {allAddOns.length > 0 && (
+          <div className={`divide-y divide-[#EDEDED] ${CARD}`}>
+            <h2 className="p-4 text-base font-semibold text-black">Extras</h2>
+            {allAddOns.map((addon) => (
+              <div key={addon.name} className="p-4">
+                <p className="text-sm text-neutral-500">{addon.name}</p>
+                <p className="text-sm font-semibold text-black">
+                  Qty {addon.qty} ·{' '}
+                  <span className={cancelled ? 'line-through' : undefined}>
+                    {fmt(addon.price)}
+                  </span>{' '}
+                  each
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Order details */}
         <div className={CARD}>
@@ -214,66 +235,68 @@ export function ReceiptClient({
           </div>
         </div>
 
-        {/* Actions */}
-        <button
-          onClick={() => window.print()}
-          className={`flex w-full items-center justify-between p-4 text-left ${CARD}`}
-        >
-          <span className="flex items-center gap-3">
-            <svg className="shrink-0" width="20" height="20" viewBox="0 0 20 20" fill="none">
+        {/* Actions — left out of the printed/downloaded receipt. */}
+        <div className={`divide-y divide-[#EDEDED] print:hidden ${CARD}`}>
+          <button
+            onClick={() => window.print()}
+            className="flex w-full items-center justify-between p-4 text-left"
+          >
+            <span className="flex items-center gap-3">
+              <svg className="shrink-0" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path
+                  d="M5.833 7.5V2.5h8.334v5m-8.334 7.5H4.167a1.667 1.667 0 01-1.667-1.666V10a2.5 2.5 0 012.5-2.5h10a2.5 2.5 0 012.5 2.5v3.334a1.667 1.667 0 01-1.667 1.666h-1.666m-8.334-2.5h8.334v5H5.833v-5z"
+                  stroke="#000"
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <span className="text-sm font-medium text-black">Download receipt</span>
+            </span>
+            <svg className="shrink-0" width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path
-                d="M5.833 7.5V2.5h8.334v5m-8.334 7.5H4.167a1.667 1.667 0 01-1.667-1.666V10a2.5 2.5 0 012.5-2.5h10a2.5 2.5 0 012.5 2.5v3.334a1.667 1.667 0 01-1.667 1.666h-1.666m-8.334-2.5h8.334v5H5.833v-5z"
-                stroke="#000"
-                strokeWidth="1.4"
+                d="M6 12l4-4-4-4"
+                stroke="#888"
+                strokeWidth="1.3"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
             </svg>
-            <span className="text-sm font-medium text-black">Download receipt</span>
-          </span>
-          <svg className="shrink-0" width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path
-              d="M6 12l4-4-4-4"
-              stroke="#888"
-              strokeWidth="1.3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
+          </button>
 
-        <a
-          href="https://wa.me/2348000000000"
-          target="_blank"
-          rel="noopener noreferrer"
-          className={`flex w-full items-center justify-between p-4 ${CARD}`}
-        >
-          <span className="flex items-center gap-3">
-            <svg className="shrink-0" width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <a
+            href="https://wa.me/2348000000000"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex w-full items-center justify-between p-4"
+          >
+            <span className="flex items-center gap-3">
+              <svg className="shrink-0" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path
+                  d="M3.333 14.167v-3.334a6.667 6.667 0 0113.334 0v3.334m-11.667-2.5H2.5a.833.833 0 00-.833.833v1.667c0 .46.373.833.833.833h2.5v-3.333zm12.5 0h2.5c.46 0 .833.373.833.833v1.667c0 .46-.373.833-.833.833h-2.5v-3.333zm-1.666 3.333a2.5 2.5 0 01-2.5 2.5H10"
+                  stroke="#000"
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <span className="text-sm font-medium text-black">Get help</span>
+            </span>
+            <svg className="shrink-0" width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path
-                d="M3.333 14.167v-3.334a6.667 6.667 0 0113.334 0v3.334m-11.667-2.5H2.5a.833.833 0 00-.833.833v1.667c0 .46.373.833.833.833h2.5v-3.333zm12.5 0h2.5c.46 0 .833.373.833.833v1.667c0 .46-.373.833-.833.833h-2.5v-3.333zm-1.666 3.333a2.5 2.5 0 01-2.5 2.5H10"
-                stroke="#000"
-                strokeWidth="1.4"
+                d="M6 12l4-4-4-4"
+                stroke="#888"
+                strokeWidth="1.3"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
             </svg>
-            <span className="text-sm font-medium text-black">Get help</span>
-          </span>
-          <svg className="shrink-0" width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path
-              d="M6 12l4-4-4-4"
-              stroke="#888"
-              strokeWidth="1.3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </a>
+          </a>
+        </div>
       </div>
 
-      {/* Fixed share button */}
-      <div className="fixed inset-x-0 bottom-0 z-30 bg-white px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+      {/* Fixed share button — left out of the printed/downloaded receipt. */}
+      <div className="fixed inset-x-0 bottom-0 z-30 bg-white px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] print:hidden">
         <Button
           variant="brand"
           onClick={handleShare}
